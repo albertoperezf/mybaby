@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/app-context";
 import { Button, Card, PageTitle, Segmented, Switch, useToast } from "@/components/ui";
 import { EmptyState, SproutIllustration } from "@/components/illustrations";
+import { HealthTabs } from "@/components/health-tabs";
 import { useMeasurements } from "@/db/hooks";
 import { restore, softDelete } from "@/db/repo";
 import type { Measurement, Sex } from "@/db/types";
@@ -94,6 +95,7 @@ export default function GrowthPage() {
 
   return (
     <div>
+      <HealthTabs />
       <PageTitle
         action={
           <Button variant="primary" onClick={() => setSheet({ open: true })}>

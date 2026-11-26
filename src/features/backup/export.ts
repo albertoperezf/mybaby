@@ -2,10 +2,11 @@ import { db, EXPORT_SCHEMA_VERSION } from "@/db/schema";
 import { getSetting, setSetting } from "@/db/settings";
 import type { Baby, ID } from "@/db/types";
 import { mlToOz } from "@/lib/units";
+import { vaccineName } from "@/features/vaccines/labels";
 import { toCsv } from "./csv";
 import type { BackupFile } from "@/db/zod";
 
-export type CsvKind = "feedings" | "diapers" | "measurements";
+export type CsvKind = "feedings" | "diapers" | "measurements" | "vaccines";
 
 export async function buildBackup(): Promise<BackupFile> {
   const [babies, feedings, diapers, measurements, sleeps, medications, vaccines, reminders] = await Promise.all([
@@ -102,6 +103,36 @@ export async function buildCsv(kind: CsvKind): Promise<string> {
         note: d.note ?? "",
       }));
     return toCsv(["id", "baby_id", "baby_name", "time_iso", "tz", "type", "note"], rows, ["baby_name", "note"]);
+  }
+
+  if (kind === "vaccines") {
+    const rows = (await db.vaccines.toArray())
+      .filter((v) => !v.deletedAt)
+      .sort((a, b) => (a.dueOn ?? "").localeCompare(b.dueOn ?? "") || a.code.localeCompare(b.code))
+      .map((v) => ({
+        id: v.id,
+        baby_id: v.babyId,
+        baby_name: name(v.babyId),
+        code: v.code,
+        vaccine: v.vaccine ?? "",
+        dose: v.dose ?? "",
+        name: vaccineName(v, "en"),
+        schedule: v.scheduleId ?? "",
+        due_on: v.dueOn ?? "",
+        window_from: v.windowFrom ?? "",
+        window_to: v.windowTo ?? "",
+        given_on: v.givenOn ?? "",
+        skipped_on: v.skippedOn ?? "",
+        lot: v.lot ?? "",
+        provider: v.provider ?? "",
+        optional: v.optional ? "yes" : "",
+        note: v.note ?? "",
+      }));
+    return toCsv(
+      ["id", "baby_id", "baby_name", "code", "vaccine", "dose", "name", "schedule", "due_on", "window_from", "window_to", "given_on", "skipped_on", "lot", "provider", "optional", "note"],
+      rows,
+      ["baby_name", "name", "lot", "provider", "note"],
+    );
   }
 
   const rows = (await db.measurements.toArray())

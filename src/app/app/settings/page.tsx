@@ -12,6 +12,7 @@ import { db } from "@/db/schema";
 import { setSetting } from "@/db/settings";
 import type { Baby } from "@/db/types";
 import { BabySheet } from "@/features/babies/baby-form";
+import { rebaseForBaby } from "@/features/vaccines/repo";
 import { useLocale, useT } from "@/i18n";
 import { readStorageStatus, requestPersistence, type StorageStatus } from "@/lib/pwa";
 import { formatDayTime } from "@/lib/time";
@@ -46,7 +47,7 @@ export default function SettingsPage() {
     }
   }
 
-  async function exportCsv(kind: "feedings" | "diapers" | "measurements") {
+  async function exportCsv(kind: "feedings" | "diapers" | "measurements" | "vaccines") {
     const [{ buildCsv, backupFilename }, { saveFile }] = await Promise.all([
       import("@/features/backup/export"),
       import("@/features/backup/save-file"),
@@ -221,10 +222,11 @@ export default function SettingsPage() {
               <Download aria-hidden className="size-5" />
               {t("backup.exportJson")}
             </Button>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Button onClick={() => exportCsv("feedings")}>{t("backup.csvFeedings")}</Button>
               <Button onClick={() => exportCsv("diapers")}>{t("backup.csvDiapers")}</Button>
               <Button onClick={() => exportCsv("measurements")}>{t("backup.csvGrowth")}</Button>
+              <Button onClick={() => exportCsv("vaccines")}>{t("backup.csvVaccines")}</Button>
             </div>
 
             <hr className="border-line" />
@@ -294,8 +296,10 @@ export default function SettingsPage() {
         editing={babySheet.editing}
         onClose={() => setBabySheet({ open: false })}
         onSubmit={async (input) => {
-          if (babySheet.editing) await updateBaby(babySheet.editing.id, input);
-          else await addBaby(input);
+          if (babySheet.editing) {
+            await updateBaby(babySheet.editing.id, input);
+            if (input.birthDate !== babySheet.editing.birthDate) await rebaseForBaby({ ...babySheet.editing, birthDate: input.birthDate });
+          } else await addBaby(input);
         }}
       />
     </div>

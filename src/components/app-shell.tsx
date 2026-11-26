@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Bell, ClipboardList, House, Plus, Settings, TrendingUp, type LucideIcon } from "lucide-react";
+import { Bell, ClipboardList, HeartPulse, House, Plus, Settings, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -12,6 +12,7 @@ import { Onboarding } from "@/features/onboarding";
 import { QuickLogSheet } from "@/features/feeding/quick-log";
 import { DueBanner, ReminderEngine } from "@/features/reminders/engine";
 import { PushSync } from "@/features/push/push-sync";
+import { VaccineReminderSync } from "@/features/vaccines/sync";
 import { I18nProvider, useT, type MessageKey } from "@/i18n";
 import { BRAND } from "@/lib/brand";
 import { requestPersistence } from "@/lib/pwa";
@@ -21,10 +22,10 @@ import { BabyAvatar } from "./baby-avatar";
 import { ThemeToggle } from "./theme-toggle";
 import { ToastProvider } from "./ui";
 
-const NAV: { href: string; label: MessageKey; icon: LucideIcon }[] = [
+const NAV: { href: string; label: MessageKey; icon: LucideIcon; also?: string[] }[] = [
   { href: "/app", label: "nav.home", icon: House },
   { href: "/app/log", label: "nav.log", icon: ClipboardList },
-  { href: "/app/growth", label: "nav.growth", icon: TrendingUp },
+  { href: "/app/growth", label: "nav.health", icon: HeartPulse, also: ["/app/vaccines"] },
   { href: "/app/reminders", label: "nav.reminders", icon: Bell },
   { href: "/app/settings", label: "nav.settings", icon: Settings },
 ];
@@ -164,7 +165,8 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
     [settings, babies, baby, openQuickLog],
   );
 
-  const isActive = (href: string) => (href === "/app" ? pathname === "/app" : pathname.startsWith(href));
+  const isActive = (href: string, also: string[] = []) =>
+    href === "/app" ? pathname === "/app" : [href, ...also].some((p) => pathname.startsWith(p));
 
   const switcher = (
     <BabySwitcher
@@ -179,22 +181,23 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
     <AppContextProvider value={value}>
       <ReminderEngine />
       <PushSync />
+      <VaccineReminderSync />
       <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <aside className="sticky top-0 hidden h-dvh flex-col gap-6 border-r border-line bg-surface p-5 lg:flex">
+        <aside className="sticky top-0 hidden h-dvh flex-col gap-6 border-r border-line bg-surface p-5 lg:flex print:hidden">
           <div className="flex items-center justify-between gap-2">
             <BrandMark />
             <ThemeToggle toDarkLabel={t("theme.toDark")} toLightLabel={t("theme.toLight")} />
           </div>
           {switcher}
           <nav aria-label={t("nav.main")} className="flex flex-col gap-1">
-            {NAV.map(({ href, label, icon: Icon }) => (
+            {NAV.map(({ href, label, icon: Icon, also }) => (
               <Link
                 key={href}
                 href={href}
-                aria-current={isActive(href) ? "page" : undefined}
+                aria-current={isActive(href, also) ? "page" : undefined}
                 className={clsx(
                   "flex min-h-12 items-center gap-3 rounded-2xl px-4 font-semibold",
-                  isActive(href) ? "bg-feed-tint font-extrabold text-feed-ink" : "hover:bg-surface2",
+                  isActive(href, also) ? "bg-feed-tint font-extrabold text-feed-ink" : "hover:bg-surface2",
                 )}
               >
                 <Icon aria-hidden className="size-5" />
@@ -205,11 +208,11 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
         </aside>
 
         <div className="flex min-w-0 flex-col">
-          <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
+          <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden print:hidden">
             <div className="min-w-0 flex-1 overflow-x-auto">{babies.length > 1 ? switcher : <BrandMark />}</div>
             <ThemeToggle toDarkLabel={t("theme.toDark")} toLightLabel={t("theme.toLight")} />
           </header>
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-44 pt-4 lg:p-8 lg:pb-28">
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-44 pt-4 lg:p-8 lg:pb-28 print:p-0">
             <div>
               <DueBanner />
               {children}
@@ -220,23 +223,23 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
 
       <nav
         aria-label={t("nav.main")}
-        className="fixed inset-x-0 bottom-0 z-30 rounded-t-[1.75rem] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-soft lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 rounded-t-[1.75rem] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-soft lg:hidden print:hidden"
       >
         <ul className="mx-auto grid max-w-xl grid-cols-5">
-          {NAV.map(({ href, label, icon: Icon }) => (
+          {NAV.map(({ href, label, icon: Icon, also }) => (
             <li key={href}>
               <Link
                 href={href}
-                aria-current={isActive(href) ? "page" : undefined}
+                aria-current={isActive(href, also) ? "page" : undefined}
                 className={clsx(
                   "flex min-h-16 flex-col items-center justify-center gap-0.5 text-xs",
-                  isActive(href) ? "font-extrabold text-fg" : "font-semibold text-muted",
+                  isActive(href, also) ? "font-extrabold text-fg" : "font-semibold text-muted",
                 )}
               >
                 <span
                   className={clsx(
                     "grid h-8 w-14 place-items-center rounded-full transition",
-                    isActive(href) && "bg-feed-tint text-feed-ink",
+                    isActive(href, also) && "bg-feed-tint text-feed-ink",
                   )}
                 >
                   <Icon aria-hidden className="size-6" />
@@ -253,7 +256,7 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
         type="button"
         aria-label={t("quick.title")}
         onClick={() => openQuickLog()}
-        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-40 grid size-16 place-items-center rounded-full bg-primary text-primary-fg shadow-xl ring-4 ring-bg transition active:scale-95 lg:bottom-8 lg:right-8"
+        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-40 grid size-16 place-items-center rounded-full bg-primary text-primary-fg shadow-xl ring-4 ring-bg transition active:scale-95 lg:bottom-8 lg:right-8 print:hidden"
       >
         <Plus aria-hidden className="size-8" />
       </button>

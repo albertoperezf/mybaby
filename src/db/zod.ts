@@ -24,6 +24,7 @@ export const babySchema = z.object({
   birthWeightG: z.number().positive().max(10000).optional(),
   color: z.string().max(20),
   avatar: z.string().max(16).optional(),
+  vaccineSchedule: z.enum(["us", "es", "none"]).optional(),
   archivedAt: ts.optional(),
   ...record,
 });
@@ -74,11 +75,21 @@ export const medicationSchema = z.object({
 
 export const vaccineSchema = z.object({
   ...owned,
-  code: z.string().max(40),
+  code: z.string().max(60),
+  vaccine: z.string().max(40).optional(),
+  dose: z.number().int().min(1).max(20).optional(),
+  scheduleId: z.enum(["us", "es", "custom"]).optional(),
   name: z.string().max(120),
   dueOn: isoDate.optional(),
+  windowFrom: isoDate.optional(),
+  windowTo: isoDate.optional(),
+  afterCode: z.string().max(60).optional(),
+  minGapDays: z.number().int().min(0).max(2000).optional(),
+  optional: z.boolean().optional(),
   givenOn: isoDate.optional(),
+  skippedOn: isoDate.optional(),
   lot: z.string().max(60).optional(),
+  provider: z.string().max(120).optional(),
   note,
 });
 
@@ -93,7 +104,7 @@ export const scheduleSchema = z.discriminatedUnion("type", [
 export const reminderSchema = z.object({
   id,
   babyId: id.optional(),
-  kind: z.enum(["feeding-interval", "medication", "vitamin", "appointment", "custom"]),
+  kind: z.enum(["feeding-interval", "medication", "vitamin", "appointment", "vaccine", "custom"]),
   title: z.string().max(200),
   schedule: scheduleSchema,
   enabled: z.boolean(),
@@ -101,6 +112,7 @@ export const reminderSchema = z.object({
   nextFireAt: ts.optional(),
   notifiedFor: ts.optional(),
   lastDismissedAt: ts.optional(),
+  autoKey: z.string().max(120).optional(),
   ...record,
 });
 

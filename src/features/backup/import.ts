@@ -1,15 +1,17 @@
 import { ulid } from "ulid";
 import { db } from "@/db/schema";
 import { getSetting, deviceId, setSetting } from "@/db/settings";
-import { DATA_TABLES, type DataTableName, type ID, type Reminder } from "@/db/types";
+import { DATA_TABLES, type DataTableName, type ID, type Reminder, type VaccineScheduleId } from "@/db/types";
 import {
   backupSchema,
   diaperSchema,
   feedingSchema,
   measurementSchema,
+  vaccineSchema,
   type BackupData,
   type BackupFile,
 } from "@/db/zod";
+import { SCHEDULES } from "@/features/vaccines/schedule-data";
 import { applyQuietHours, nextOccurrence } from "@/features/reminders/schedule";
 import { deviceTz } from "@/lib/time";
 import { ozToMl } from "@/lib/units";
@@ -115,6 +117,7 @@ export async function importBackupText(text: string, mode: "merge" | "replace", 
 
 export function detectCsvKind(header: string[]): CsvKind | null {
   const h = new Set(header);
+  if (h.has("code") && (h.has("given_on") || h.has("due_on"))) return "vaccines";
   if (h.has("time_iso") && h.has("type")) return "diapers";
   if (h.has("time_iso") && (h.has("amount_ml") || h.has("amount_oz") || h.has("kind"))) return "feedings";
   if (h.has("date") && (h.has("weight_g") || h.has("weight_kg") || h.has("length_mm") || h.has("head_mm"))) return "measurements";
@@ -155,6 +158,27 @@ export async function importCsvText(text: string, fallbackBabyId: ID): Promise<I
         amountMl: ml,
         enteredUnit: r.entered_unit === "oz" || r.entered_unit === "ml" ? r.entered_unit : undefined,
         milk: r.milk || undefined,
+        note: r.note ? unguardText(r.note) : undefined,
+      });
+    } else if (kind === "vaccines") {
+      const template = SCHEDULES[r.schedule as VaccineScheduleId]?.doses.find((d) => d.code === r.code);
+      result = vaccineSchema.safeParse({
+        ...common,
+        code: r.code,
+        vaccine: r.vaccine || undefined,
+        dose: num(r.dose),
+        scheduleId: r.schedule || undefined,
+        name: unguardText(r.name ?? ""),
+        dueOn: r.due_on || undefined,
+        windowFrom: r.window_from || undefined,
+        windowTo: r.window_to || undefined,
+        afterCode: template?.after,
+        minGapDays: template?.minGapDays,
+        optional: r.optional === "yes" ? true : undefined,
+        givenOn: r.given_on || undefined,
+        skippedOn: r.skipped_on || undefined,
+        lot: r.lot ? unguardText(r.lot) : undefined,
+        provider: r.provider ? unguardText(r.provider) : undefined,
         note: r.note ? unguardText(r.note) : undefined,
       });
     } else if (kind === "diapers") {

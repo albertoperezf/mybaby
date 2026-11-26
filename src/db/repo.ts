@@ -7,7 +7,7 @@ import { deviceTz } from "@/lib/time";
 export const BABY_COLORS = ["#e07a5f", "#f2a65a", "#81b29a", "#8e7dbe", "#e56b9a", "#4fa3b8"];
 export const BABY_AVATARS = ["🐣", "🧸", "🌙", "⭐", "🐻", "🦊", "🐰", "🌼"];
 
-async function stamp() {
+export async function stamp() {
   const now = Date.now();
   return { createdAt: now, updatedAt: now, deviceId: await deviceId() };
 }
@@ -31,7 +31,7 @@ export async function addBaby(input: BabyInput): Promise<Baby> {
   return baby;
 }
 
-export async function updateBaby(id: ID, input: Partial<BabyInput>): Promise<void> {
+export async function updateBaby(id: ID, input: Partial<BabyInput> & Pick<Partial<Baby>, "vaccineSchedule">): Promise<void> {
   await db.babies.update(id, { ...input, updatedAt: Date.now() });
 }
 

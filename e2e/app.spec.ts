@@ -97,7 +97,7 @@ test.describe("reminders", () => {
 test.describe("growth", () => {
   test("add a measurement and see percentiles on the chart and history", async ({ page }) => {
     await onboard(page);
-    await page.getByRole("link", { name: "Growth" }).first().click();
+    await page.getByRole("link", { name: "Health" }).first().click();
     await page.getByRole("button", { name: "Add measurement" }).click();
     const sheet = page.getByRole("dialog");
     await sheet.getByLabel("Weight (lb)").fill("7");
@@ -209,6 +209,7 @@ test.describe("light/dark toggle", () => {
     const html = page.locator("html");
     await page.getByRole("button", { name: "Switch to dark mode" }).click();
     await expect(html).toHaveAttribute("data-theme", "dark");
+    await page.waitForTimeout(400); // let the setting finish writing to IndexedDB before reloading
     await page.reload();
     await expect(page.getByRole("heading", { name: "Ada", level: 1 })).toBeVisible();
     await expect(html).toHaveAttribute("data-theme", "dark");
@@ -219,6 +220,83 @@ test.describe("light/dark toggle", () => {
     await page.getByRole("button", { name: "Switch to light mode" }).click();
     await expect(html).toHaveAttribute("data-theme", "light");
     await expect(page.getByRole("radio", { name: "Light", exact: true })).toHaveAttribute("aria-checked", "true");
+  });
+});
+
+test.describe("vaccines", () => {
+  test.use({ colorScheme: "light" });
+
+  async function openVaccines(page: Page) {
+    await page.getByRole("link", { name: "Health" }).first().click();
+    await page.getByRole("link", { name: "Vaccines" }).first().click();
+  }
+
+  test("choose a schedule, record doses, and keep the details", async ({ page }) => {
+    await onboard(page);
+    await openVaccines(page);
+    await expect(page.getByRole("heading", { name: /Which vaccine schedule should we follow for Ada/ })).toBeVisible();
+    await expect(page.getByText(/For information only/).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Use this schedule" }).first().click();
+    await expect(page.getByText("Hepatitis B #1", { exact: true })).toBeVisible();
+    await expect(page.getByText("Doses due now: 1")).toBeVisible();
+
+    await page.getByRole("button", { name: "Mark Hepatitis B #1 as given today" }).click();
+    await expect(page.getByText("Vaccine saved")).toBeVisible();
+    await expect(page.getByText("All caught up. Nice work.")).toBeVisible();
+    await expect(page.getByText("1 of 1 recommended doses given so far")).toBeVisible();
+
+    // Details: lot number and clinic are saved and shown again.
+    await page.getByRole("button", { name: "Edit Hepatitis B #1" }).click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByLabel("Lot number").fill("L123");
+    await sheet.getByLabel("Clinic or provider").fill("City Pediatrics");
+    await sheet.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Edit Hepatitis B #1" }).click();
+    await expect(page.getByRole("dialog").getByLabel("Lot number")).toHaveValue("L123");
+    await page.getByRole("dialog").getByRole("button", { name: "Mark as not given" }).click();
+    await expect(page.getByText("Doses due now: 1")).toBeVisible();
+  });
+
+  test("add another vaccine, skip a dose, and switch schedule keeping what was given", async ({ page }) => {
+    await onboard(page);
+    await openVaccines(page);
+    await page.getByRole("button", { name: "Use this schedule" }).first().click();
+    await page.getByRole("button", { name: "Mark Hepatitis B #1 as given today" }).click();
+
+    await page.getByRole("button", { name: "Add other vaccine" }).click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByLabel("Vaccine name").fill("BCG");
+    await sheet.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("heading", { name: "Other vaccines" })).toBeVisible();
+    await expect(page.getByText("BCG", { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Change schedule" }).click();
+    await page.getByRole("button", { name: "Use this schedule" }).nth(1).click(); // Spain
+    await expect(page.getByText("Hexavalent (6-in-1) #1", { exact: true })).toBeVisible();
+    await expect(page.getByText("Hepatitis B #1", { exact: true })).toBeVisible(); // the given dose was kept
+    await expect(page.getByText("BCG", { exact: true })).toBeVisible();
+  });
+
+  test("visit reminders appear on the Reminders page when switched on", async ({ page }) => {
+    await onboard(page);
+    await openVaccines(page);
+    await page.getByRole("button", { name: "Use this schedule" }).first().click();
+    await page.getByRole("switch", { name: "Vaccine visit reminders" }).click();
+    await page.waitForTimeout(1500);
+    await page.getByRole("link", { name: "Reminders" }).first().click();
+    await expect(page.getByText(/Vaccines on .*DTaP #1/).first()).toBeVisible();
+  });
+
+  test("vaccine record in Spanish", async ({ page }) => {
+    await onboard(page);
+    await page.getByRole("link", { name: "Settings" }).first().click();
+    await page.getByRole("radio", { name: "Español" }).click();
+    await page.getByRole("link", { name: "Salud" }).first().click();
+    await page.getByRole("link", { name: "Vacunas" }).first().click();
+    await page.getByRole("button", { name: "Usar este calendario" }).nth(1).click();
+    await expect(page.getByText("Hexavalente (6 en 1) #1")).toBeVisible();
+    await expect(page.getByText(/Solo informativo/).first()).toBeVisible();
   });
 });
 
@@ -238,11 +316,21 @@ test.describe("i18n and themes", () => {
       await page.getByRole("link", { name: "Settings" }).first().click();
       await page.getByRole("radio", { name: theme, exact: true }).click();
 
-      for (const link of ["Home", "Log", "Growth", "Reminders", "Settings"]) {
+      for (const link of ["Home", "Log", "Health", "Reminders", "Settings"]) {
         await page.getByRole("link", { name: link, exact: true }).first().click();
         await page.waitForTimeout(300);
         const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
         expect(results.violations.map((v) => `${link}: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
+      }
+
+      // Vaccines: the schedule chooser and the checklist with a dose due.
+      await page.getByRole("link", { name: "Health", exact: true }).first().click();
+      await page.getByRole("link", { name: "Vaccines", exact: true }).first().click();
+      for (const step of ["chooser", "checklist"]) {
+        if (step === "checklist") await page.getByRole("button", { name: "Use this schedule" }).first().click();
+        await page.waitForTimeout(300);
+        const vaccineResults = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+        expect(vaccineResults.violations.map((v) => `vaccines ${step}: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
       }
     });
   }
@@ -256,7 +344,7 @@ test.describe("privacy and offline", () => {
     });
     await onboard(page);
     await page.getByRole("button", { name: "Log 3 oz" }).click();
-    for (const link of ["Growth", "Reminders", "Settings"]) await page.getByRole("link", { name: link }).first().click();
+    for (const link of ["Health", "Reminders", "Settings"]) await page.getByRole("link", { name: link }).first().click();
     expect(foreign).toEqual([]);
   });
 
@@ -274,7 +362,7 @@ test.describe("privacy and offline", () => {
     await page.getByRole("button", { name: "Log 2 oz" }).click();
     await expect(page.getByText("Logged 2 oz")).toBeVisible();
 
-    await page.getByRole("link", { name: "Growth" }).first().click();
+    await page.getByRole("link", { name: "Health" }).first().click();
     await expect(page.getByRole("heading", { name: "Growth", level: 1 })).toBeVisible();
     await expect(page.getByRole("img", { name: /Growth chart/ })).toBeVisible();
   });

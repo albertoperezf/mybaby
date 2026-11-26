@@ -18,7 +18,7 @@ async function run(name, contextOpts, theme) {
   await page.getByRole("button", { name: "Wet" }).click();
   await page.getByRole("link", { name: "Reminders" }).first().click();
   await page.getByRole("switch", { name: "Next feeding reminder" }).click();
-  await page.getByRole("link", { name: "Growth" }).first().click();
+  await page.getByRole("link", { name: "Health" }).first().click();
   await page.getByRole("button", { name: "Add measurement" }).click();
   await page.getByLabel("Weight (lb)").fill("9");
   await page.getByLabel("Weight (oz)").fill("4");
@@ -29,7 +29,7 @@ async function run(name, contextOpts, theme) {
     await page.getByRole("link", { name: "Settings" }).first().click();
     await page.getByRole("radio", { name: theme, exact: true }).click();
   }
-  for (const [link, file] of [["Home", "home"], ["Log", "log"], ["Growth", "growth"], ["Reminders", "reminders"], ["Settings", "settings"]]) {
+  for (const [link, file] of [["Home", "home"], ["Log", "log"], ["Health", "growth"], ["Reminders", "reminders"], ["Settings", "settings"]]) {
     await page.getByRole("link", { name: link, exact: true }).first().click();
     await page.waitForTimeout(500);
     await page.screenshot({ path: `/tmp/shots/${name}-${file}.png`, fullPage: false });

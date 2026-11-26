@@ -243,3 +243,25 @@ dialog.sheet::backdrop {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Printing (e.g. the vaccine record for the pediatrician): plain black on white, no colour tints. */
+@media print {
+  html[data-theme] {
+    --bg: #fff;
+    --surface: #fff;
+    --surface-2: #fff;
+    --border: #999;
+    --fg: #000;
+    --muted: #333;
+    --feed-tint: #fff;
+    --feed-ink: #000;
+    --diaper-tint: #fff;
+    --diaper-ink: #000;
+    --growth-tint: #fff;
+    --growth-ink: #000;
+    --remind-tint: #fff;
+    --remind-ink: #000;
+    --shadow: none;
+    color-scheme: light;
+  }
+}

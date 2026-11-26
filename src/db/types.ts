@@ -21,6 +21,7 @@ export interface Baby {
   birthWeightG?: number;
   color: string;
   avatar?: string; // a single emoji
+  vaccineSchedule?: VaccineScheduleId | "none";
   archivedAt?: number;
   createdAt: number;
   updatedAt: number;
@@ -79,13 +80,28 @@ export interface Medication extends Base {
 }
 
 export interface Vaccine extends Base {
+  /** Stable dose key from the schedule, e.g. "dtap-3"; random for custom entries. */
   code: string;
+  /** Vaccine key used to look up names and descriptions; empty for custom entries. */
+  vaccine?: string;
+  dose?: number;
+  scheduleId?: VaccineScheduleId | "custom";
   name: string;
-  dueOn?: string;
+  dueOn?: string; // scheduled/appointment date, editable
+  windowFrom?: string; // recommended range from the schedule
+  windowTo?: string;
+  /** Earliest allowed date is this many days after the previous dose (`afterCode`). */
+  afterCode?: string;
+  minGapDays?: number;
+  optional?: boolean; // "if your brand needs it", seasonal or shared-decision doses
   givenOn?: string;
+  skippedOn?: string;
   lot?: string;
+  provider?: string;
   note?: string;
 }
+
+export type VaccineScheduleId = "us" | "es";
 
 export type Schedule =
   | { type: "once"; at: number }
@@ -93,7 +109,7 @@ export type Schedule =
   | { type: "daily"; times: string[] } // "HH:mm", device-local
   | { type: "weekly"; days: number[]; times: string[] }; // days: 0 = Sunday
 
-export type ReminderKind = "feeding-interval" | "medication" | "vitamin" | "appointment" | "custom";
+export type ReminderKind = "feeding-interval" | "medication" | "vitamin" | "appointment" | "vaccine" | "custom";
 
 export interface Reminder {
   id: ID;
@@ -106,6 +122,8 @@ export interface Reminder {
   nextFireAt?: number; // when it should next alert; past + not dismissed = due
   notifiedFor?: number; // nextFireAt value an OS notification was already shown for
   lastDismissedAt?: number;
+  /** Set on reminders the app manages itself (e.g. vaccine visits), so they can be updated in place. */
+  autoKey?: string;
   /** Device-local: scheduled Web Push deliveries for this reminder (never exported). */
   pushJobs?: { at: number; id: string }[];
   pushEndpoint?: string;
@@ -140,6 +158,7 @@ export interface SettingsValues {
   backupNudgeSnoozedAt: number | null;
   pushEnabled: boolean;
   nightAuto: boolean;
+  vaccineReminders: boolean;
 }
 
 export type SettingKey = keyof SettingsValues;

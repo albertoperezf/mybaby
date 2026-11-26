@@ -37,6 +37,7 @@ export function defaultSettings(): SettingsValues {
     backupNudgeSnoozedAt: null,
     pushEnabled: false,
     nightAuto: false,
+    vaccineReminders: false,
   };
 }
 
