@@ -1,0 +1,122 @@
+import { ulid } from "ulid";
+import { db } from "./schema";
+import { deviceId, getSetting, setSetting } from "./settings";
+import type { Baby, Diaper, DiaperType, Feeding, ID, Measurement } from "./types";
+import { deviceTz } from "@/lib/time";
+
+const BABY_COLORS = ["#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#8b5cf6", "#22c55e"];
+
+async function stamp() {
+  const now = Date.now();
+  return { createdAt: now, updatedAt: now, deviceId: await deviceId() };
+}
+
+// ---- babies ----------------------------------------------------------------
+
+export type BabyInput = Pick<Baby, "name" | "birthDate" | "sex" | "gestationalWeeks" | "birthWeightG">;
+
+export async function addBaby(input: BabyInput): Promise<Baby> {
+  const count = await db.babies.count();
+  const baby: Baby = {
+    id: ulid(),
+    ...input,
+    color: BABY_COLORS[count % BABY_COLORS.length],
+    ...(await stamp()),
+  };
+  await db.babies.add(baby);
+  if (!(await getSetting("activeBabyId"))) await setSetting("activeBabyId", baby.id);
+  return baby;
+}
+
+export async function updateBaby(id: ID, input: Partial<BabyInput>): Promise<void> {
+  await db.babies.update(id, { ...input, updatedAt: Date.now() });
+}
+
+export async function setBabyArchived(id: ID, archived: boolean): Promise<void> {
+  await db.babies.update(id, { archivedAt: archived ? Date.now() : undefined, updatedAt: Date.now() });
+}
+
+/** Permanently removes a baby and every record that belongs to them. */
+export async function deleteBabyForever(id: ID): Promise<void> {
+  await db.transaction(
+    "rw",
+    [db.babies, db.feedings, db.diapers, db.measurements, db.sleeps, db.medications, db.vaccines, db.reminders, db.settings],
+    async () => {
+      for (const table of [db.feedings, db.diapers, db.measurements, db.sleeps, db.medications, db.vaccines]) {
+        await table.where("babyId").equals(id).delete();
+      }
+      await db.reminders.where("babyId").equals(id).delete();
+      await db.babies.delete(id);
+      if ((await getSetting("activeBabyId")) === id) {
+        const next = (await db.babies.toArray()).find((b) => !b.archivedAt && !b.deletedAt);
+        await setSetting("activeBabyId", next?.id ?? null);
+      }
+    },
+  );
+}
+
+// ---- feedings --------------------------------------------------------------
+
+export interface FeedingInput {
+  at: number;
+  amountMl?: number;
+  enteredUnit?: "oz" | "ml";
+  milk?: Feeding["milk"];
+  note?: string;
+}
+
+/** Logs the same feeding for one or more babies (twins). Returns created ids for undo. */
+export async function addFeedings(babyIds: ID[], input: FeedingInput): Promise<Feeding[]> {
+  const base = await stamp();
+  const rows: Feeding[] = babyIds.map((babyId) => ({
+    id: ulid(),
+    babyId,
+    kind: "bottle",
+    tz: deviceTz(),
+    ...input,
+    ...base,
+  }));
+  await db.feedings.bulkAdd(rows);
+  return rows;
+}
+
+export async function updateFeeding(id: ID, patch: Partial<Pick<Feeding, "at" | "amountMl" | "enteredUnit" | "milk" | "note">>) {
+  await db.feedings.update(id, { ...patch, updatedAt: Date.now() });
+}
+
+// ---- diapers ---------------------------------------------------------------
+
+export async function addDiapers(babyIds: ID[], type: DiaperType, at = Date.now(), note?: string): Promise<Diaper[]> {
+  const base = await stamp();
+  const rows: Diaper[] = babyIds.map((babyId) => ({ id: ulid(), babyId, type, at, tz: deviceTz(), note, ...base }));
+  await db.diapers.bulkAdd(rows);
+  return rows;
+}
+
+// ---- measurements ----------------------------------------------------------
+
+export type MeasurementInput = Pick<Measurement, "measuredOn" | "weightG" | "lengthMm" | "headMm" | "source" | "note">;
+
+export async function addMeasurement(babyId: ID, input: MeasurementInput): Promise<Measurement> {
+  const row: Measurement = { id: ulid(), babyId, ...input, ...(await stamp()) };
+  await db.measurements.add(row);
+  return row;
+}
+
+export async function updateMeasurement(id: ID, input: MeasurementInput): Promise<void> {
+  await db.measurements.update(id, { ...input, updatedAt: Date.now() });
+}
+
+// ---- generic soft delete / undo -------------------------------------------
+
+type SoftTable = "feedings" | "diapers" | "measurements";
+
+export async function softDelete(table: SoftTable, ids: ID[]): Promise<void> {
+  const now = Date.now();
+  await db.table(table).bulkUpdate(ids.map((id) => ({ key: id, changes: { deletedAt: now, updatedAt: now } })));
+}
+
+export async function restore(table: SoftTable, ids: ID[]): Promise<void> {
+  const now = Date.now();
+  await db.table(table).bulkUpdate(ids.map((id) => ({ key: id, changes: { deletedAt: undefined, updatedAt: now } })));
+}

@@ -1,26 +1,134 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface-2);
+  --color-line: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Text/background pairs are all >= 4.5:1 (WCAG AA). "night" is a red-shifted low-glare theme. */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --surface-2: #f1efeb;
+  --border: #cfcac1;
+  --fg: #1c1917;
+  --muted: #57534e;
+  --primary: #4f46e5;
+  --primary-fg: #ffffff;
+  --danger: #b91c1c;
+  --ok: #15803d;
+  --warn: #a16207;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0d12;
+  --surface: #151922;
+  --surface-2: #1e2330;
+  --border: #384056;
+  --fg: #e8eaf0;
+  --muted: #a3acbd;
+  --primary: #818cf8;
+  --primary-fg: #0b0d12;
+  --danger: #f87171;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+}
+
+[data-theme="night"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #140a09;
+  --surface-2: #200f0d;
+  --border: #4a2622;
+  --fg: #e8a58f;
+  --muted: #b98270;
+  --primary: #e8754a;
+  --primary-fg: #1a0a05;
+  --danger: #f08a7a;
+  --ok: #d6a24a;
+  --warn: #e0a050;
+}
+
+html {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* Bottom sheet built on <dialog> for free focus trapping and Escape handling. */
+dialog.sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 34rem;
+  max-height: 92dvh;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: var(--surface);
+  color: var(--fg);
+  overflow-y: auto;
+}
+dialog.sheet[open] {
+  animation: sheet-up 180ms ease-out;
+}
+dialog.sheet::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+@media (min-width: 768px) {
+  dialog.sheet {
+    inset: 0;
+    margin: auto;
+    border-bottom: 1px solid var(--border);
+    border-radius: 1.5rem;
+    height: fit-content;
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog.sheet[open] {
+    animation: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
