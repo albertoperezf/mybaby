@@ -14,6 +14,7 @@ A private, offline-first PWA for newborn care: feeding and diaper log, reminders
 - **Backup**: JSON export/import (merge or replace), CSV export/import for feedings, diapers and growth, weekly backup nudge, `navigator.storage.persist()`.
 - **PWA**: installable, offline shell, iOS icons and splash screens, home-screen shortcuts.
 - **UI**: mobile-first with bottom nav and thumb-zone button, desktop sidebar dashboard, Light / Dark / Night (red-shifted) themes, English and Spanish, oz/ml and lb-in/kg-cm.
+- **Look and feel ("Soft Dawn")**: warm cream and coral by day, plum twilight in dark mode, ember reds at night; one colour per activity (feeding amber, diapers teal, growth green, reminders plum) used consistently; a home hero with a progress ring toward the next feed, time-of-day greeting and baby age; baby avatars and colours; warm bilingual copy; optional automatic Night theme from 9 PM to 6 AM. Colour tokens live in [src/app/globals.css](src/app/globals.css) and every text pair is checked for WCAG AA by the axe e2e tests.
 
 ## Getting started
 
@@ -95,6 +96,11 @@ Notes and limits:
 ## Data safety
 
 Browsers can evict IndexedDB. Mitigations built in: persistent-storage request after the first entry, install prompt (with iOS instructions), weekly "back up now" nudge with last-backup date, and one-tap JSON export through the native share sheet on mobile (Save to Files / iCloud). Use Settings → Backup regularly.
+
+## Credits
+
+- UI font: [Nunito](https://fonts.google.com/specimen/Nunito) (SIL Open Font License; license text in `public/fonts/NUNITO-OFL.txt`), self-hosted.
+- Growth data: WHO Child Growth Standards.
 
 ## Medical disclaimer
 
