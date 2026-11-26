@@ -4,7 +4,8 @@ import { deviceId, getSetting, setSetting } from "./settings";
 import type { Baby, Diaper, DiaperType, Feeding, ID, Measurement } from "./types";
 import { deviceTz } from "@/lib/time";
 
-const BABY_COLORS = ["#6366f1", "#ec4899", "#14b8a6", "#f59e0b", "#8b5cf6", "#22c55e"];
+export const BABY_COLORS = ["#e07a5f", "#f2a65a", "#81b29a", "#8e7dbe", "#e56b9a", "#4fa3b8"];
+export const BABY_AVATARS = ["🐣", "🧸", "🌙", "⭐", "🐻", "🦊", "🐰", "🌼"];
 
 async function stamp() {
   const now = Date.now();
@@ -13,14 +14,16 @@ async function stamp() {
 
 // ---- babies ----------------------------------------------------------------
 
-export type BabyInput = Pick<Baby, "name" | "birthDate" | "sex" | "gestationalWeeks" | "birthWeightG">;
+export type BabyInput = Pick<Baby, "name" | "birthDate" | "sex" | "gestationalWeeks" | "birthWeightG" | "avatar"> & {
+  color?: string;
+};
 
 export async function addBaby(input: BabyInput): Promise<Baby> {
   const count = await db.babies.count();
   const baby: Baby = {
     id: ulid(),
     ...input,
-    color: BABY_COLORS[count % BABY_COLORS.length],
+    color: input.color ?? BABY_COLORS[count % BABY_COLORS.length],
     ...(await stamp()),
   };
   await db.babies.add(baby);

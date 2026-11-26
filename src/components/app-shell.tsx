@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useEntryCount, useActiveBaby, useBabies } from "@/db/hooks";
 import { ensureDeviceId, setSetting, useSettings } from "@/db/settings";
-import type { ID, ThemeSetting } from "@/db/types";
+import type { Baby, ID, ThemeSetting } from "@/db/types";
 import { Onboarding } from "@/features/onboarding";
 import { QuickLogSheet } from "@/features/feeding/quick-log";
 import { DueBanner, ReminderEngine } from "@/features/reminders/engine";
@@ -17,6 +17,7 @@ import { BRAND } from "@/lib/brand";
 import { requestPersistence } from "@/lib/pwa";
 import { applyTheme } from "@/lib/theme";
 import { AppContextProvider } from "./app-context";
+import { BabyAvatar } from "./baby-avatar";
 import { ThemeToggle } from "./theme-toggle";
 import { ToastProvider } from "./ui";
 
@@ -28,19 +29,72 @@ const NAV: { href: string; label: MessageKey; icon: LucideIcon }[] = [
   { href: "/app/settings", label: "nav.settings", icon: Settings },
 ];
 
-function useThemeSync(theme: ThemeSetting | undefined) {
+const isNightHours = (d = new Date()) => d.getHours() >= 21 || d.getHours() < 6;
+
+function useThemeSync(theme: ThemeSetting | undefined, nightAuto: boolean) {
+  const [night, setNight] = useState(() => isNightHours());
+
+  useEffect(() => {
+    if (!nightAuto) return;
+    const id = setInterval(() => setNight(isNightHours()), 60_000);
+    return () => clearInterval(id);
+  }, [nightAuto]);
+
   useEffect(() => {
     if (!theme) return;
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
-      applyTheme(theme === "system" ? (media.matches ? "dark" : "light") : theme);
+      if (theme === "system") applyTheme(nightAuto && night ? "night" : media.matches ? "dark" : "light");
+      else applyTheme(theme);
     };
     apply();
     localStorage.setItem("theme", theme);
     if (theme !== "system") return;
     media.addEventListener("change", apply);
     return () => media.removeEventListener("change", apply);
-  }, [theme]);
+  }, [theme, nightAuto, night]);
+}
+
+function BrandMark() {
+  return (
+    <span className="flex items-center gap-2 text-xl font-extrabold tracking-tight">
+      <span
+        aria-hidden
+        className="grid size-9 place-items-center rounded-xl text-lg"
+        style={{ background: "linear-gradient(135deg, #e8803f, #c2492b)", color: "#fff3e6" }}
+      >
+        ☾
+      </span>
+      {BRAND.name}
+    </span>
+  );
+}
+
+function BabySwitcher({ babies, activeId, onSelect, label }: { babies: Baby[]; activeId: ID; onSelect: (id: ID) => void; label: string }) {
+  if (babies.length < 2) return null;
+  return (
+    <div role="radiogroup" aria-label={label} className="flex gap-2">
+      {babies.map((b) => {
+        const active = b.id === activeId;
+        return (
+          <button
+            key={b.id}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onSelect(b.id)}
+            className={clsx(
+              "flex min-h-12 shrink-0 items-center gap-2 rounded-full border-2 py-1 pl-1.5 pr-4 font-bold transition",
+              active ? "border-primary bg-surface shadow-soft" : "border-transparent bg-surface2",
+            )}
+          >
+            <BabyAvatar baby={b} size="sm" />
+            {b.name}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -49,7 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const baby = useActiveBaby(babies, settings?.activeBabyId);
   const count = useEntryCount();
 
-  useThemeSync(settings?.theme);
+  useThemeSync(settings?.theme, settings?.nightAuto ?? false);
 
   useEffect(() => {
     if (settings) void ensureDeviceId();
@@ -112,21 +166,14 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
 
   const isActive = (href: string) => (href === "/app" ? pathname === "/app" : pathname.startsWith(href));
 
-  const switcher =
-    babies.length > 1 ? (
-      <select
-        aria-label={t("nav.switchBaby")}
-        value={baby.id}
-        onChange={(e) => value.setActiveBaby(e.target.value)}
-        className="min-h-12 rounded-xl border border-line bg-surface2 px-3 font-semibold"
-      >
-        {babies.map((b) => (
-          <option key={b.id} value={b.id}>
-            {b.name}
-          </option>
-        ))}
-      </select>
-    ) : null;
+  const switcher = (
+    <BabySwitcher
+      babies={babies}
+      activeId={baby.id}
+      onSelect={value.setActiveBaby}
+      label={t("nav.switchBaby")}
+    />
+  );
 
   return (
     <AppContextProvider value={value}>
@@ -135,7 +182,7 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
       <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside className="sticky top-0 hidden h-dvh flex-col gap-6 border-r border-line bg-surface p-5 lg:flex">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xl font-bold">{BRAND.name}</p>
+            <BrandMark />
             <ThemeToggle toDarkLabel={t("theme.toDark")} toLightLabel={t("theme.toLight")} />
           </div>
           {switcher}
@@ -146,8 +193,8 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
                 href={href}
                 aria-current={isActive(href) ? "page" : undefined}
                 className={clsx(
-                  "flex min-h-12 items-center gap-3 rounded-2xl px-4 font-medium",
-                  isActive(href) ? "bg-primary text-primary-fg" : "hover:bg-surface2",
+                  "flex min-h-12 items-center gap-3 rounded-2xl px-4 font-semibold",
+                  isActive(href) ? "bg-feed-tint font-extrabold text-feed-ink" : "hover:bg-surface2",
                 )}
               >
                 <Icon aria-hidden className="size-5" />
@@ -159,7 +206,7 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
 
         <div className="flex min-w-0 flex-col">
           <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
-            {switcher ?? <span className="text-lg font-bold">{BRAND.name}</span>}
+            <div className="min-w-0 flex-1 overflow-x-auto">{babies.length > 1 ? switcher : <BrandMark />}</div>
             <ThemeToggle toDarkLabel={t("theme.toDark")} toLightLabel={t("theme.toLight")} />
           </header>
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-44 pt-4 lg:p-8 lg:pb-28">
@@ -173,7 +220,7 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
 
       <nav
         aria-label={t("nav.main")}
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 rounded-t-[1.75rem] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-soft lg:hidden"
       >
         <ul className="mx-auto grid max-w-xl grid-cols-5">
           {NAV.map(({ href, label, icon: Icon }) => (
@@ -182,11 +229,18 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
                 href={href}
                 aria-current={isActive(href) ? "page" : undefined}
                 className={clsx(
-                  "flex min-h-16 flex-col items-center justify-center gap-0.5 text-xs font-medium",
-                  isActive(href) ? "text-primary" : "text-muted",
+                  "flex min-h-16 flex-col items-center justify-center gap-0.5 text-xs",
+                  isActive(href) ? "font-extrabold text-fg" : "font-semibold text-muted",
                 )}
               >
-                <Icon aria-hidden className="size-6" />
+                <span
+                  className={clsx(
+                    "grid h-8 w-14 place-items-center rounded-full transition",
+                    isActive(href) && "bg-feed-tint text-feed-ink",
+                  )}
+                >
+                  <Icon aria-hidden className="size-6" />
+                </span>
                 {t(label)}
               </Link>
             </li>
@@ -199,7 +253,7 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
         type="button"
         aria-label={t("quick.title")}
         onClick={() => openQuickLog()}
-        className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] right-4 z-40 grid size-16 place-items-center rounded-full bg-primary text-primary-fg shadow-xl transition active:scale-95 lg:bottom-8 lg:right-8"
+        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-40 grid size-16 place-items-center rounded-full bg-primary text-primary-fg shadow-xl ring-4 ring-bg transition active:scale-95 lg:bottom-8 lg:right-8"
       >
         <Plus aria-hidden className="size-8" />
       </button>

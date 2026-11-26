@@ -23,6 +23,7 @@ export const babySchema = z.object({
   gestationalWeeks: z.number().min(20).max(45).optional(),
   birthWeightG: z.number().positive().max(10000).optional(),
   color: z.string().max(20),
+  avatar: z.string().max(16).optional(),
   archivedAt: ts.optional(),
   ...record,
 });

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Button, Card, Segmented } from "@/components/ui";
+import { MoonIllustration } from "@/components/illustrations";
 import { addBaby } from "@/db/repo";
 import { setSetting } from "@/db/settings";
 import type { SettingsValues } from "@/db/types";
@@ -34,9 +35,12 @@ export function Onboarding({ settings }: { settings: SettingsValues }) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 pb-8 pt-[max(2rem,env(safe-area-inset-top))]">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">{t("onboarding.welcome")}</h1>
-        <p className="mt-1 text-muted">{t("onboarding.tagline")}</p>
+      <header className="flex items-center gap-4">
+        <MoonIllustration />
+        <div>
+          <h1 className="text-4xl font-extrabold tracking-tight">{t("onboarding.welcome")}</h1>
+          <p className="mt-1 text-muted">{t("onboarding.tagline")}</p>
+        </div>
       </header>
 
       <Card className="flex flex-col gap-3">

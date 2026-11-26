@@ -34,18 +34,19 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf9f7" },
+    { media: "(prefers-color-scheme: light)", color: "#fff8f1" },
     { media: "(prefers-color-scheme: dark)", color: BRAND.darkBg },
   ],
 };
 
 // Runs before first paint so the saved theme never flashes the wrong colours.
-const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=d;var c={light:'#faf9f7',dark:'#0b0d12',night:'#000000'}[d];document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute('content',c)});}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var d=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;var h=new Date().getHours();if(t==='system'&&localStorage.getItem('nightAuto')==='1'&&(h>=21||h<6))d='night';document.documentElement.dataset.theme=d;var c={light:'#fff8f1',dark:'#14121f',night:'#000000'}[d];document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute('content',c)});}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preload" href="/fonts/nunito-latin-wght.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>

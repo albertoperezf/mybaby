@@ -39,7 +39,7 @@ export function DailyTotalsChart({ days }: { days: DaySummary[] }) {
                 width={barW}
                 height={Math.max(h, d.ml > 0 ? 2 : 0)}
                 rx={4}
-                fill="var(--primary)"
+                fill="var(--feed)"
                 opacity={isToday ? 1 : 0.55}
               />
               {d.ml > 0 && (

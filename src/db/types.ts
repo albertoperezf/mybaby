@@ -20,6 +20,7 @@ export interface Baby {
   gestationalWeeks?: number; // < 37 enables corrected age
   birthWeightG?: number;
   color: string;
+  avatar?: string; // a single emoji
   archivedAt?: number;
   createdAt: number;
   updatedAt: number;
@@ -138,6 +139,7 @@ export interface SettingsValues {
   installHintDismissedAt: number | null;
   backupNudgeSnoozedAt: number | null;
   pushEnabled: boolean;
+  nightAuto: boolean;
 }
 
 export type SettingKey = keyof SettingsValues;

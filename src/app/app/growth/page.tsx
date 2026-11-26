@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/app-context";
 import { Button, Card, PageTitle, Segmented, Switch, useToast } from "@/components/ui";
+import { EmptyState, SproutIllustration } from "@/components/illustrations";
 import { useMeasurements } from "@/db/hooks";
 import { restore, softDelete } from "@/db/repo";
 import type { Measurement, Sex } from "@/db/types";
@@ -145,8 +146,8 @@ export default function GrowthPage() {
 
         <section aria-label={t("growth.history")} className="flex flex-col gap-3">
           {measurements && list.length === 0 && (
-            <Card className="text-center">
-              <p className="text-muted">{t("growth.empty")}</p>
+            <Card>
+              <EmptyState art={<SproutIllustration />} text={t("growth.empty")} />
             </Card>
           )}
           {list.map((m) => {
@@ -181,10 +182,10 @@ export default function GrowthPage() {
                 </div>
                 <ul className="grid grid-cols-3 gap-2 text-sm">
                   {s.parts.map((p) => (
-                    <li key={p.key} className="rounded-xl bg-surface2 p-2">
-                      <span className="block text-xs text-muted">{indicatorLabel(p.key)}</span>
-                      <span className="block font-semibold tabular-nums">{p.text}</span>
-                      {p.pct && <span className="block text-xs text-muted">{p.pct} {t("growth.percentile")}</span>}
+                    <li key={p.key} className="rounded-2xl bg-growth-tint p-2.5 text-growth-ink">
+                      <span className="block text-xs font-semibold opacity-85">{indicatorLabel(p.key)}</span>
+                      <span className="block font-extrabold tabular-nums">{p.text}</span>
+                      {p.pct && <span className="block text-xs font-semibold opacity-85">{p.pct} {t("growth.percentile")}</span>}
                     </li>
                   ))}
                 </ul>

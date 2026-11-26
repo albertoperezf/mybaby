@@ -2,7 +2,7 @@
 
 import { Droplets, Milk, Plus } from "lucide-react";
 import { useApp } from "@/components/app-context";
-import { Button, Card, SectionTitle } from "@/components/ui";
+import { Button, SectionTitle } from "@/components/ui";
 import { useLastAmount } from "@/db/hooks";
 import type { DiaperType } from "@/db/types";
 import { useT, type MessageKey } from "@/i18n";
@@ -19,62 +19,65 @@ export function QuickActions() {
   const last = useLastAmount(baby.id);
   const { logFeeding, logDiaper } = useLogging();
 
-  const lastOz = last ? volumeNumber(last.amountMl, unit) : null;
+  const lastValue = last ? volumeNumber(last.amountMl, unit) : null;
   const presetMl = PRESETS[unit].map((v) => toMl(v, unit));
 
   return (
-    <Card className="flex flex-col gap-4">
-      <div>
+    <div className="flex flex-col gap-5">
+      <section aria-label={t("home.logFeed")}>
         <SectionTitle>{t("home.logFeed")}</SectionTitle>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           {presetMl.map((ml) => (
             <Button
               key={ml}
+              variant="feed"
               size="lg"
+              className="rounded-[1.75rem] text-2xl"
               onClick={() => logFeeding([baby.id], { at: Date.now(), amountMl: ml, enteredUnit: unit })}
               aria-label={t("home.logAmount", { amount: formatVolume(ml, unit) })}
             >
-              <Milk aria-hidden className="size-5" />
+              <Milk aria-hidden className="size-6 text-feed" />
               {formatVolume(ml, unit)}
             </Button>
           ))}
-          {last && lastOz !== null && !PRESETS[unit].some((p) => p === lastOz) ? (
+          {last && lastValue !== null && !PRESETS[unit].some((p) => p === lastValue) ? (
             <Button
               size="lg"
               variant="primary"
+              className="rounded-[1.75rem]"
               onClick={() => logFeeding([baby.id], { at: Date.now(), amountMl: last.amountMl, enteredUnit: unit })}
               aria-label={t("home.logLast", { amount: formatVolume(last.amountMl, unit) })}
             >
-              <Milk aria-hidden className="size-5" />
+              <Milk aria-hidden className="size-6" />
               <span className="flex flex-col items-start leading-tight">
-                <span className="text-xs font-medium opacity-80">{t("quick.last")}</span>
-                {formatVolume(last.amountMl, unit)}
+                <span className="text-xs font-semibold opacity-85">{t("quick.last")}</span>
+                <span className="text-xl">{formatVolume(last.amountMl, unit)}</span>
               </span>
             </Button>
           ) : (
-            <Button size="lg" variant="ghost" className="border border-dashed border-line" onClick={() => openQuickLog({ tab: "feed" })}>
-              <Plus aria-hidden className="size-5" />
+            <Button size="lg" variant="ghost" className="rounded-[1.75rem] border-2 border-dashed border-line" onClick={() => openQuickLog({ tab: "feed" })}>
+              <Plus aria-hidden className="size-6" />
               {t("home.other")}
             </Button>
           )}
         </div>
-      </div>
+      </section>
 
-      <div>
+      <section aria-label={t("home.logDiaper")}>
         <SectionTitle>{t("home.logDiaper")}</SectionTitle>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           {(["wet", "dirty", "both"] as DiaperType[]).map((type) => (
-            <Button key={type} size="lg" className="!text-lg" onClick={() => logDiaper([baby.id], type)}>
-              <Droplets aria-hidden className="size-5" />
+            <Button key={type} variant="diaper" size="lg" className="flex-col gap-1 rounded-[1.75rem] !px-2 !text-base" onClick={() => logDiaper([baby.id], type)}>
+              <Droplets aria-hidden className="size-6 text-diaper" />
               {t(`diaper.${type}` as MessageKey)}
             </Button>
           ))}
         </div>
-      </div>
+      </section>
 
       <Button variant="ghost" onClick={() => openQuickLog({ tab: "feed" })}>
         {t("home.moreOptions")}
       </Button>
-    </Card>
+    </div>
   );
 }

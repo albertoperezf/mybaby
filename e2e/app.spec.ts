@@ -16,7 +16,7 @@ test.describe("feeding log", () => {
 
     await page.getByRole("button", { name: "Log 3 oz" }).click();
     await expect(page.getByText("Logged 3 oz")).toBeVisible();
-    await expect(page.getByText("<1m ago")).toBeVisible();
+    await expect(page.getByRole("img", { name: "Last fed <1m ago" })).toBeVisible();
 
     await page.getByRole("button", { name: "Undo" }).click();
     await expect(page.getByText("No feedings yet")).toBeVisible();
@@ -39,7 +39,7 @@ test.describe("feeding log", () => {
     await sheet.getByRole("radio", { name: "ml" }).click();
     await sheet.getByRole("button", { name: "Log feeding" }).click();
     await expect(page.getByText("Logged 100 ml")).toBeVisible();
-    await expect(page.getByText("30m ago")).toBeVisible();
+    await expect(page.getByRole("img", { name: "Last fed 30m ago" })).toBeVisible();
 
     await page.getByRole("link", { name: "Log" }).first().click();
     await expect(page.getByText("100 ml").first()).toBeVisible();
@@ -143,6 +143,49 @@ test.describe("backup", () => {
 
     await page.locator('input[type="file"]').setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from("nope") });
     await expect(page.getByText("That file isn't a valid backup.")).toBeVisible();
+  });
+});
+
+test.describe("personality", () => {
+  test.use({ colorScheme: "light" });
+
+  test("home greets the baby and shows an encouraging summary", async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-06-01T02:30:00") });
+    await onboard(page);
+    await expect(page.getByText("Up late? You've got this")).toBeVisible();
+    await expect(page.getByText(/A fresh day for Ada/)).toBeVisible();
+    await page.getByRole("button", { name: "Log 3 oz" }).click();
+    await expect(page.getByText("Feed #1 done today. Nice and steady.")).toBeVisible();
+    await expect(page.getByText("On track")).toBeVisible();
+  });
+
+  test("a second baby gets an avatar and can be switched to", async ({ page }) => {
+    await onboard(page);
+    await page.getByRole("link", { name: "Settings" }).first().click();
+    await page.getByRole("button", { name: "Add baby" }).click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByLabel("Name").fill("Bo");
+    await sheet.getByRole("radio", { name: "🦊" }).click();
+    await sheet.getByRole("button", { name: "Save" }).click();
+
+    const switcher = page.getByRole("radiogroup", { name: "Switch baby" });
+    await expect(switcher.getByRole("radio", { name: "Bo" })).toBeVisible();
+    await switcher.getByRole("radio", { name: "Bo" }).click();
+    await page.getByRole("link", { name: "Home" }).first().click();
+    await expect(page.getByRole("heading", { name: "Bo", level: 1 })).toBeVisible();
+    await expect(page.locator("main").getByText("🦊")).toBeVisible();
+  });
+
+  test("optional Night theme after 9 PM while theme is Auto", async ({ page }) => {
+    await page.clock.install({ time: new Date("2026-06-01T23:15:00") });
+    await onboard(page);
+    const html = page.locator("html");
+    await expect(html).toHaveAttribute("data-theme", "light");
+    await page.getByRole("link", { name: "Settings" }).first().click();
+    await page.getByRole("switch", { name: /Switch to the Night theme/ }).click();
+    await expect(html).toHaveAttribute("data-theme", "night");
+    await page.reload();
+    await expect(html).toHaveAttribute("data-theme", "night");
   });
 });
 

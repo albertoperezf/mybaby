@@ -22,7 +22,7 @@ export const en = {
 
   // onboarding
   "onboarding.welcome": "Welcome",
-  "onboarding.tagline": "A private care log. Everything stays on this device.",
+  "onboarding.tagline": "A calm, private place for your newborn's days and nights. Everything stays on this device.",
   "onboarding.disclaimerTitle": "Before you start",
   "onboarding.disclaimer":
     "This app is a personal log, not medical advice. Growth percentiles are informational only (WHO Child Growth Standards) and do not diagnose anything. Talk to your pediatrician about any concern, and call emergency services in an emergency.",
@@ -58,6 +58,24 @@ export const en = {
   "home.other": "Other",
   "home.logDiaper": "Log a diaper",
   "home.moreOptions": "More options (time, note)",
+  "home.today": "Today",
+  "home.cheer.none": "A fresh day for {name}. Log the first feed whenever you're ready.",
+  "home.cheer.few": "Feed #{n} done today. Nice and steady.",
+  "home.cheer.many": "{n} feeds today. You're doing great.",
+  "greet.morning": "Good morning",
+  "greet.afternoon": "Good afternoon",
+  "greet.evening": "Good evening",
+  "greet.night": "Up late? You've got this",
+  "hero.sinceLast": "since last feed",
+  "hero.emptyHint": "Tap a size below to log the first feed. It takes one tap.",
+  "hero.state.fresh": "On track",
+  "hero.state.soon": "Almost time",
+  "hero.state.due": "Time to feed",
+  "hero.state.overdue": "Overdue",
+  "baby.avatar": "Pick an avatar",
+  "baby.color": "Color",
+  "settings.nightAuto": "Switch to the Night theme from 9 PM to 6 AM",
+  "settings.nightAutoHint": "Only while Theme is Auto. Dims everything and shifts to warm reds for tired eyes.",
 
   // quick log
   "quick.title": "Quick log",
@@ -89,7 +107,7 @@ export const en = {
   "diaper.dry": "Dry",
 
   // log + stats
-  "log.empty": "Nothing logged yet.",
+  "log.empty": "A fresh page. Log the first feed with the + button.",
   "log.feeding": "Feeding",
   "log.loadMore": "Load 2 more weeks",
   "stats.dailyTotals": "Daily totals, last 7 days",
@@ -121,7 +139,7 @@ export const en = {
   "growth.corrected": "Born at {weeks} weeks: use corrected age",
   "growth.correctedLabel": "Use corrected age",
   "growth.history": "Measurement history",
-  "growth.empty": "No measurements yet. Add one after each doctor visit.",
+  "growth.empty": "No measurements yet. After each doctor visit, add the numbers and watch the curve grow.",
   "growth.percentile": "percentile",
   "growth.chartLabel": "Growth chart with WHO percentile curves and your baby's measurements",
   "growth.disclaimer":
@@ -154,7 +172,7 @@ export const en = {
   "reminder.others": "Other reminders",
   "reminder.exportIcs": "Add to calendar",
   "reminder.icsHint": "The calendar file (.ics) works with Apple, Google and Outlook calendars and alerts even when this app is closed.",
-  "reminder.empty": "No reminders yet. Add vitamin D, medicine or appointments.",
+  "reminder.empty": "Nothing scheduled. Add vitamin D, medicine or a doctor's visit.",
   "reminder.off": "Off",
   "reminder.type": "Type",
   "reminder.kind.vitamin": "Vitamin",

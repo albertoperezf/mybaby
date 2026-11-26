@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -18,14 +18,16 @@ import { useT } from "@/i18n";
 
 // ---- Button ----------------------------------------------------------------
 
-type Variant = "primary" | "secondary" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "feed" | "diaper";
 type Size = "md" | "lg";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-primary text-primary-fg font-semibold",
-  secondary: "bg-surface2 text-fg border border-line font-medium",
-  ghost: "text-fg font-medium hover:bg-surface2",
-  danger: "bg-danger text-primary-fg font-semibold",
+  primary: "bg-primary text-primary-fg font-bold shadow-soft",
+  secondary: "bg-surface2 text-fg border border-line font-semibold",
+  ghost: "text-fg font-semibold hover:bg-surface2",
+  danger: "bg-danger text-primary-fg font-bold",
+  feed: "bg-feed-tint text-feed-ink border border-feed/30 font-bold",
+  diaper: "bg-diaper-tint text-diaper-ink border border-diaper/30 font-bold",
 };
 const sizes: Record<Size, string> = {
   md: "min-h-12 px-5 text-base",
@@ -55,13 +57,13 @@ export function Button({ variant = "secondary", size = "md", className, type = "
 // ---- Layout bits -----------------------------------------------------------
 
 export function Card({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={clsx("rounded-3xl border border-line bg-surface p-4 sm:p-5", className)} {...rest} />;
+  return <div className={clsx("rounded-[1.75rem] border border-line bg-surface p-4 shadow-soft sm:p-5", className)} {...rest} />;
 }
 
 export function PageTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-4 flex items-center justify-between gap-3">
-      <h1 className="text-2xl font-bold tracking-tight">{children}</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight">{children}</h1>
       {action}
     </div>
   );
@@ -178,6 +180,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
     >
       {open && (
         <div className="flex flex-col gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div aria-hidden className="mx-auto -mb-1 h-1.5 w-10 rounded-full bg-line md:hidden" />
           <div className="flex items-center justify-between gap-3">
             <h2 id={titleId} className="text-xl font-bold">
               {title}
@@ -237,8 +240,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         className="pointer-events-none fixed inset-x-0 bottom-[calc(10rem+env(safe-area-inset-bottom))] z-50 flex justify-center px-4 lg:bottom-28"
       >
         {toast && (
-          <div className="pointer-events-auto flex w-full max-w-md items-center justify-between gap-3 rounded-2xl border border-line bg-fg px-4 py-3 text-bg shadow-lg">
-            <span className="text-sm font-medium">{toast.message}</span>
+          <div className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border border-line bg-fg px-4 py-3 text-bg shadow-lg">
+            <span key={toast.id} aria-hidden className="animate-pop grid size-7 shrink-0 place-items-center rounded-full bg-bg text-fg">
+              <Check className="size-4" strokeWidth={3} />
+            </span>
+            <span className="flex-1 text-sm font-semibold">{toast.message}</span>
             {toast.onAction && (
               <button
                 type="button"

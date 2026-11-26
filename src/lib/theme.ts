@@ -1,8 +1,8 @@
 export type ResolvedTheme = "light" | "dark" | "night";
 
 const BROWSER_CHROME: Record<ResolvedTheme, string> = {
-  light: "#faf9f7",
-  dark: "#0b0d12",
+  light: "#fff8f1",
+  dark: "#14121f",
   night: "#000000",
 };
 

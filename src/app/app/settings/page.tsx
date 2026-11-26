@@ -4,7 +4,8 @@ import { Archive, Download, HardDriveDownload, Pencil, Plus, ShieldCheck, Trash2
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/app-context";
-import { Button, Card, PageTitle, Segmented, SectionTitle, Field, useToast } from "@/components/ui";
+import { Button, Card, PageTitle, Segmented, SectionTitle, Field, Switch, useToast } from "@/components/ui";
+import { BabyAvatar } from "@/components/baby-avatar";
 import { useBabies } from "@/db/hooks";
 import { addBaby, deleteBabyForever, setBabyArchived, updateBaby } from "@/db/repo";
 import { db } from "@/db/schema";
@@ -96,7 +97,7 @@ export default function SettingsPage() {
             <ul className="flex flex-col gap-2">
               {allBabies?.map((b) => (
                 <li key={b.id} className="flex items-center gap-2 rounded-2xl bg-surface2 p-2 pl-4">
-                  <span className="size-3 shrink-0 rounded-full" style={{ background: b.color }} aria-hidden />
+                  <BabyAvatar baby={b} size="sm" />
                   <span className="min-w-0 flex-1 truncate font-medium">
                     {b.name}
                     {b.archivedAt && <span className="ml-2 text-xs text-muted">{t("settings.archived")}</span>}
@@ -156,6 +157,15 @@ export default function SettingsPage() {
               ]}
             />
             <p className="-mt-2 text-xs text-muted">{t("settings.nightHint")}</p>
+            {settings.theme === "system" && (
+              <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface2 p-3">
+                <div>
+                  <p className="text-sm font-semibold">{t("settings.nightAuto")}</p>
+                  <p className="text-xs text-muted">{t("settings.nightAutoHint")}</p>
+                </div>
+                <Switch checked={settings.nightAuto} onChange={(v) => setSetting("nightAuto", v)} label={t("settings.nightAuto")} />
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium">{t("settings.volumeUnit")}</span>

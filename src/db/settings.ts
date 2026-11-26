@@ -36,12 +36,14 @@ export function defaultSettings(): SettingsValues {
     installHintDismissedAt: null,
     backupNudgeSnoozedAt: null,
     pushEnabled: false,
+    nightAuto: false,
   };
 }
 
 export async function setSetting<K extends SettingKey>(key: K, value: SettingsValues[K]): Promise<void> {
   await db.settings.put({ key, value });
   if (key === "theme" && typeof localStorage !== "undefined") localStorage.setItem("theme", String(value));
+  if (key === "nightAuto" && typeof localStorage !== "undefined") localStorage.setItem("nightAuto", value ? "1" : "0");
 }
 
 export async function getSetting<K extends SettingKey>(key: K): Promise<SettingsValues[K] | undefined> {

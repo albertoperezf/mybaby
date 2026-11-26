@@ -4,8 +4,9 @@ import path from "node:path";
 import sharp from "sharp";
 
 const OUT = path.resolve("public/icons");
-const BRAND = "#4f46e5";
-const SPLASH_BG = "#0b0d12"; // dark on purpose: no white flash at 3 AM
+const BRAND = "#c2492b";
+const BRAND_2 = "#e8803f";
+const SPLASH_BG = "#14121f"; // dark on purpose: no white flash at 3 AM
 
 // scale < 1 shrinks the moon into the maskable safe zone.
 const moon = (size, scale = 1) => {
@@ -14,15 +15,18 @@ const moon = (size, scale = 1) => {
   return `
     <mask id="m"><rect width="${size}" height="${size}" fill="white"/>
       <circle cx="${c + r * 0.55}" cy="${c - r * 0.4}" r="${r * 0.88}" fill="black"/></mask>
-    <circle cx="${c}" cy="${c}" r="${r}" fill="#fff" mask="url(#m)"/>
-    <circle cx="${c + r * 0.95}" cy="${c + r * 0.75}" r="${r * 0.07}" fill="#fff"/>
-    <circle cx="${c + r * 0.55}" cy="${c + r * 1.1}" r="${r * 0.045}" fill="#fff"/>`;
+    <circle cx="${c}" cy="${c}" r="${r}" fill="#fff3e6" mask="url(#m)"/>
+    <circle cx="${c + r * 0.95}" cy="${c + r * 0.75}" r="${r * 0.07}" fill="#fff3e6"/>
+    <circle cx="${c + r * 0.55}" cy="${c + r * 1.1}" r="${r * 0.045}" fill="#fff3e6"/>`;
 };
+
+const gradient = (id) =>
+  `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${BRAND_2}"/><stop offset="1" stop-color="${BRAND}"/></linearGradient></defs>`;
 
 const iconSvg = (size, scale) =>
   Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-      <rect width="${size}" height="${size}" fill="${BRAND}"/>${moon(size, scale)}</svg>`,
+      ${gradient("g")}<rect width="${size}" height="${size}" fill="url(#g)"/>${moon(size, scale)}</svg>`,
   );
 
 const splashSvg = (w, h) => {
@@ -33,7 +37,7 @@ const splashSvg = (w, h) => {
     `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
       <rect width="${w}" height="${h}" fill="${SPLASH_BG}"/>
       <svg x="${x}" y="${y}" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
-        <rect width="${s}" height="${s}" rx="${s * 0.22}" fill="${BRAND}"/>${moon(s, 1)}</svg></svg>`,
+        ${gradient("g")}<rect width="${s}" height="${s}" rx="${s * 0.22}" fill="url(#g)"/>${moon(s, 1)}</svg></svg>`,
   );
 };
 

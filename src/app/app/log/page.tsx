@@ -4,6 +4,7 @@ import { Droplets, Milk, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/app-context";
 import { Button, Card, PageTitle, useToast } from "@/components/ui";
+import { EmptyState, MoonIllustration } from "@/components/illustrations";
 import { restore, softDelete } from "@/db/repo";
 import type { Diaper, Feeding } from "@/db/types";
 import { rescheduleFeedingReminder } from "@/features/reminders/actions";
@@ -65,11 +66,12 @@ export default function LogPage() {
       )}
 
       {groups && groups.length === 0 && (
-        <Card className="text-center">
-          <p className="text-muted">{t("log.empty")}</p>
-          <Button variant="primary" className="mt-3" onClick={() => openQuickLog({ tab: "feed" })}>
-            {t("quick.logFeeding")}
-          </Button>
+        <Card>
+          <EmptyState art={<MoonIllustration />} text={t("log.empty")}>
+            <Button variant="primary" className="mt-2" onClick={() => openQuickLog({ tab: "feed" })}>
+              {t("quick.logFeeding")}
+            </Button>
+          </EmptyState>
         </Card>
       )}
 
@@ -88,10 +90,10 @@ export default function LogPage() {
                   {ml > 0 ? ` · ${formatVolume(ml, settings.volumeUnit)}` : ""}
                 </p>
               </div>
-              <ul className="overflow-hidden rounded-3xl border border-line bg-surface">
+              <ul className="overflow-hidden rounded-[1.75rem] border border-line bg-surface shadow-soft">
                 {entries.map((e) => (
                   <li key={e.row.id} className="flex items-center gap-3 border-b border-line p-3 last:border-b-0">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-surface2 text-primary">
+                    <span className={`grid size-11 shrink-0 place-items-center rounded-full ${e.kind === "feed" ? "bg-feed-tint text-feed-ink" : "bg-diaper-tint text-diaper-ink"}`}>
                       {e.kind === "feed" ? <Milk aria-hidden className="size-5" /> : <Droplets aria-hidden className="size-5" />}
                     </span>
                     <div className="min-w-0 flex-1">

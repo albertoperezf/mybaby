@@ -4,6 +4,7 @@ import { Bell, BellOff, CalendarPlus, Minus, Pencil, Plus, Trash2 } from "lucide
 import { useState } from "react";
 import { useApp } from "@/components/app-context";
 import { Button, Card, Field, PageTitle, SectionTitle, Switch, inputClass, useToast } from "@/components/ui";
+import { BellIllustration, EmptyState } from "@/components/illustrations";
 import { useReminders } from "@/db/hooks";
 import { setSetting } from "@/db/settings";
 import type { QuietHours, Reminder } from "@/db/types";
@@ -183,14 +184,16 @@ export default function RemindersPage() {
             </Button>
           </div>
           {reminders && custom.length === 0 && (
-            <Card className="text-center text-muted">{t("reminder.empty")}</Card>
+            <Card>
+              <EmptyState art={<BellIllustration />} text={t("reminder.empty")} />
+            </Card>
           )}
           {custom.map((r) => (
             <Card key={r.id} className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{r.title}</p>
                 <p className="text-sm text-muted">
-                  <span className="mr-1 rounded-full bg-surface2 px-2 py-0.5 text-xs">{t(`reminder.kind.${r.kind}` as MessageKey)}</span>
+                  <span className="mr-1 rounded-full bg-remind-tint px-2 py-0.5 text-xs font-bold text-remind-ink">{t(`reminder.kind.${r.kind}` as MessageKey)}</span>
                   {describe(r, t, locale)}
                 </p>
                 {r.enabled && r.nextFireAt && r.schedule.type !== "once" && (

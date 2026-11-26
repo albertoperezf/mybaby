@@ -94,7 +94,7 @@ export function GrowthChart({ who, sex, indicator, imperial, points, maxMonths, 
         {t("growth.months")}
       </text>
 
-      <path d={band} fill="var(--surface-2)" opacity={0.9} />
+      <path d={band} fill="var(--growth-tint)" opacity={0.9} />
       {lines.map((l) => (
         <g key={l.percentile}>
           <path
@@ -114,7 +114,7 @@ export function GrowthChart({ who, sex, indicator, imperial, points, maxMonths, 
 
       {visible.length > 1 && <path d={path(visible)} fill="none" stroke="var(--primary)" strokeWidth={3} strokeLinejoin="round" />}
       {visible.map((p, i) => (
-        <circle key={i} cx={x(p.x)} cy={y(p.y)} r={5.5} fill="var(--primary)" stroke="var(--surface)" strokeWidth={2} />
+        <circle key={i} cx={x(p.x)} cy={y(p.y)} r={6} fill="var(--primary)" stroke="var(--surface)" strokeWidth={2.5} />
       ))}
     </svg>
   );

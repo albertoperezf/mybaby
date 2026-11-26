@@ -24,7 +24,7 @@ export const es: Record<keyof typeof en, string> = {
 
   // onboarding
   "onboarding.welcome": "Bienvenido",
-  "onboarding.tagline": "Un registro de cuidados privado. Todo se queda en este dispositivo.",
+  "onboarding.tagline": "Un lugar tranquilo y privado para los días y las noches de tu bebé. Todo se queda en este dispositivo.",
   "onboarding.disclaimerTitle": "Antes de empezar",
   "onboarding.disclaimer":
     "Esta app es un registro personal, no un consejo médico. Los percentiles de crecimiento son solo informativos (Estándares de Crecimiento Infantil de la OMS) y no diagnostican nada. Consulta a tu pediatra ante cualquier duda y llama a emergencias en caso de urgencia.",
@@ -60,6 +60,24 @@ export const es: Record<keyof typeof en, string> = {
   "home.other": "Otra",
   "home.logDiaper": "Registrar un pañal",
   "home.moreOptions": "Más opciones (hora, nota)",
+  "home.today": "Hoy",
+  "home.cheer.none": "Un día nuevo para {name}. Registra la primera toma cuando quieras.",
+  "home.cheer.few": "Toma n.º {n} de hoy. Con calma y constancia.",
+  "home.cheer.many": "{n} tomas hoy. Lo estás haciendo genial.",
+  "greet.morning": "Buenos días",
+  "greet.afternoon": "Buenas tardes",
+  "greet.evening": "Buenas noches",
+  "greet.night": "Noche larga, tú puedes",
+  "hero.sinceLast": "desde la última toma",
+  "hero.emptyHint": "Toca una cantidad abajo para registrar la primera toma. Es un solo toque.",
+  "hero.state.fresh": "Todo en orden",
+  "hero.state.soon": "Casi es hora",
+  "hero.state.due": "Hora de comer",
+  "hero.state.overdue": "Atrasada",
+  "baby.avatar": "Elige un avatar",
+  "baby.color": "Color",
+  "settings.nightAuto": "Usar el tema Noche de 9 PM a 6 AM",
+  "settings.nightAutoHint": "Solo con el tema en Auto. Atenúa todo y cambia a rojos cálidos para ojos cansados.",
 
   // quick log
   "quick.title": "Registro rápido",
@@ -91,7 +109,7 @@ export const es: Record<keyof typeof en, string> = {
   "diaper.dry": "Seco",
 
   // log + stats
-  "log.empty": "Aún no hay registros.",
+  "log.empty": "Una página nueva. Registra la primera toma con el botón +.",
   "log.feeding": "Toma",
   "log.loadMore": "Cargar 2 semanas más",
   "stats.dailyTotals": "Totales diarios, últimos 7 días",
@@ -123,7 +141,7 @@ export const es: Record<keyof typeof en, string> = {
   "growth.corrected": "Nació a las {weeks} semanas: usar edad corregida",
   "growth.correctedLabel": "Usar edad corregida",
   "growth.history": "Historial de mediciones",
-  "growth.empty": "Aún no hay mediciones. Añade una después de cada visita al médico.",
+  "growth.empty": "Aún no hay mediciones. Tras cada visita al médico, añade las cifras y mira crecer la curva.",
   "growth.percentile": "percentil",
   "growth.chartLabel": "Gráfica de crecimiento con curvas de percentiles de la OMS y las mediciones de tu bebé",
   "growth.disclaimer":
@@ -156,7 +174,7 @@ export const es: Record<keyof typeof en, string> = {
   "reminder.others": "Otras alertas",
   "reminder.exportIcs": "Añadir al calendario",
   "reminder.icsHint": "El archivo de calendario (.ics) funciona con Apple, Google y Outlook y avisa aunque esta app esté cerrada.",
-  "reminder.empty": "Aún no hay alertas. Añade vitamina D, medicinas o citas.",
+  "reminder.empty": "Nada programado. Añade vitamina D, medicinas o una visita al médico.",
   "reminder.off": "Desactivada",
   "reminder.type": "Tipo",
   "reminder.kind.vitamin": "Vitamina",
