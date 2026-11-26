@@ -150,7 +150,7 @@ export const en = {
   "reminder.notifIos": "On iPhone, add the app to your Home Screen first, then turn on notifications.",
   "reminder.enableNotif": "Turn on notifications",
   "reminder.limits":
-    "Reminders fire while the app is open or running in the background. A fully closed app can't be woken without a server, so add important ones to your calendar too.",
+    "Without the closed-app alerts below, reminders fire while the app is open or in the background. Add important ones to your calendar too.",
   "reminder.others": "Other reminders",
   "reminder.exportIcs": "Add to calendar",
   "reminder.icsHint": "The calendar file (.ics) works with Apple, Google and Outlook calendars and alerts even when this app is closed.",
@@ -181,6 +181,18 @@ export const en = {
   "reminder.dismiss": "Dismiss",
   "reminder.snooze": "Snooze",
   "reminder.snoozeMin": "{n} min",
+
+  // push
+  "push.title": "Alerts when the app is closed",
+  "push.body": "Optional. Delivers reminders through your phone's push service even if the app isn't open.",
+  "push.privacy": "To do this, a push address and the reminder times are sent to a scheduling service. Names, notes and health data never leave your device.",
+  "push.test": "Send a test notification",
+  "push.testSent": "Test sent. It should arrive in a few seconds.",
+  "push.denied": "Notifications are blocked. Allow them in your browser or phone settings, then try again.",
+  "push.unsupported": "This browser doesn't support push notifications.",
+  "push.iosInstall": "On iPhone, add the app to your Home Screen first (Share, then Add to Home Screen), then turn this on.",
+  "push.notConfigured": "Not set up on this server. Reminders still alert while the app is open.",
+  "push.error": "Couldn't reach the notification service. Check your connection and try again.",
 
   // nudges
   "nudge.backupTitle": "Back up your data",

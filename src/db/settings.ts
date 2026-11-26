@@ -35,6 +35,7 @@ export function defaultSettings(): SettingsValues {
     lastBackupAt: null,
     installHintDismissedAt: null,
     backupNudgeSnoozedAt: null,
+    pushEnabled: false,
   };
 }
 

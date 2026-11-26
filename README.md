@@ -68,9 +68,29 @@ Key decisions
 
 ## Reminders: what they can and can't do
 
-Browsers cannot wake a fully closed web app without a server. In this version reminders fire while the app is open or running in the background (a timer, plus a re-check when the app returns to the foreground), show an OS notification if permitted, and set the app badge. For anything critical, use **Add to calendar (.ics)** so the phone's calendar alerts even when the app is closed.
+Browsers cannot wake a fully closed web app without a server. By default reminders fire while the app is open or running in the background (a timer, plus a re-check when the app returns to the foreground), show an OS notification if permitted, and set the app badge. For anything critical, use **Add to calendar (.ics)** so the phone's calendar alerts even when the app is closed, or enable the optional Web Push alerts described below.
 
-Planned for v1 (opt-in): Web Push. A minimal serverless function stores only an anonymous push subscription, a random reminder id and the fire time, scheduled per reminder through a delayed-message queue (not Vercel Cron: on the Hobby plan it runs at most once a day). The notification text is built on the device from IndexedDB, so no baby data reaches the server. iOS needs the app installed to the Home Screen (16.4+).
+Optional Web Push alerts (below) add delivery while the app is closed. A delayed-message queue is used instead of Vercel Cron because Cron on the Hobby plan runs at most once a day.
+
+## Optional: closed-app alerts (Web Push)
+
+Off unless you configure it; without the environment variables below the app works as before and the Reminders page says push isn't set up.
+
+How it works: when a reminder is created or changes, the app asks `/api/push/schedule` to queue one delayed message per upcoming fire time (next 6 days, re-synced whenever the app opens) in [Upstash QStash](https://upstash.com/docs/qstash). At fire time QStash calls `/api/push/send`, which verifies QStash's signature and sends a Web Push (VAPID) to the device. Nothing is stored in a database. The queue holds the push address, a random reminder id and the time; the push payload is just ids, and the service worker builds the visible text from IndexedDB on the device. Cancel/reschedule uses the returned message ids.
+
+Setup:
+
+1. `npm run push:keys` to generate VAPID keys.
+2. Create a free Upstash QStash project and copy the token and the two signing keys.
+3. In Vercel → Project → Settings → Environment Variables (Production), set the variables from [.env.example](.env.example): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`. `PUSH_BASE_URL` is only needed for a custom origin (Vercel's production domain is picked up automatically). Redeploy.
+4. Open the app on the production URL, Reminders → "Alerts when the app is closed" → turn on, then "Send a test notification".
+
+Notes and limits:
+
+- QStash must reach `/api/push/send`, so use the production domain (preview deployments behind Vercel Authentication and `localhost` won't work).
+- Only real browser push hosts (FCM, Mozilla, Apple, Windows) are accepted as subscription endpoints, requests are size/time validated, and `/api/push/send` rejects anything not signed by QStash. There is no per-user auth (the app has no accounts), so the scheduling endpoints are protected by validation and a best-effort rate limit; add an Upstash Redis limiter if you expect abuse.
+- iOS: requires the app on the Home Screen (16.4+). Android/desktop Chrome, Firefox and Edge work directly.
+- Reminders more than 6 days out, or from an app not opened for more than 6 days, won't have queued pushes until the app is opened again.
 
 ## Data safety
 
@@ -82,5 +102,5 @@ This is a personal log, not a medical device. Percentiles are informational and 
 
 ## Roadmap
 
-- **v1**: opt-in Web Push, sleep and breast/pump timers, medication log with dosage, vaccine checklist, doctor-visit notes, pediatrician PDF report, share-by-file for a second caregiver, encrypted backup file.
+- **v1**: sleep and breast/pump timers, medication log with dosage, vaccine checklist, doctor-visit notes, pediatrician PDF report, share-by-file for a second caregiver, encrypted backup file.
 - **v2**: end-to-end encrypted sync between devices (QR pairing), milestones and photo journal, more locales, optional Capacitor wrapper for widgets and native notifications.

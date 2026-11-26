@@ -23,8 +23,10 @@ export default function Privacy() {
       <h2 className="text-xl font-semibold">Network</h2>
       <p>
         The site serves the app files and nothing else; the app&apos;s content security policy blocks it from contacting
-        any other server. Optional push notifications (not part of this version) would store only an anonymous push
-        address and reminder times.
+        any other server. Optional closed-app alerts (off by default, only if the site owner has set them up) send an
+        anonymous push address and the times of your reminders to the site&apos;s server and a scheduling service so a
+        notification can be delivered later. Baby names, notes and health data are never sent; the notification text is
+        built on your device.
       </p>
       <h2 className="text-xl font-semibold">Medical disclaimer</h2>
       <p>

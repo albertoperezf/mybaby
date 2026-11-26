@@ -74,6 +74,14 @@ test.describe("reminders", () => {
     await expect(page.getByRole("alert").filter({ hasText: "Time to feed Ada" })).toHaveCount(0);
   });
 
+  test("closed-app alerts are clearly unavailable when the server has no push config", async ({ page }) => {
+    await onboard(page);
+    await page.getByRole("link", { name: "Reminders" }).first().click();
+    await expect(page.getByRole("heading", { name: "Alerts when the app is closed" })).toBeVisible();
+    await expect(page.getByText(/Not set up on this server/)).toBeVisible();
+    await expect(page.getByRole("switch", { name: "Alerts when the app is closed" })).toHaveCount(0);
+  });
+
   test("custom daily reminder is saved and listed", async ({ page }) => {
     await onboard(page);
     await page.getByRole("link", { name: "Reminders" }).first().click();

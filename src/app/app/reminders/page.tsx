@@ -14,6 +14,7 @@ import {
 } from "@/features/reminders/actions";
 import { reminderTitle } from "@/features/reminders/engine";
 import { ReminderSheet } from "@/features/reminders/reminder-sheet";
+import { PushCard } from "@/features/push/push-card";
 import { useLocale, useT, type MessageKey, type TFn } from "@/i18n";
 import { buildIcs } from "@/lib/ics";
 import { formatDayTime } from "@/lib/time";
@@ -169,6 +170,8 @@ export default function RemindersPage() {
             {perm === "default" && <Button variant="primary" onClick={enableNotifications}>{t("reminder.enableNotif")}</Button>}
             <p className="text-xs text-muted">{t("reminder.limits")}</p>
           </Card>
+
+          <PushCard />
         </div>
 
         <div className="flex flex-col gap-3">

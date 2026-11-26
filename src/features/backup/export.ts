@@ -32,7 +32,22 @@ export async function buildBackup(): Promise<BackupFile> {
     schemaVersion: EXPORT_SCHEMA_VERSION,
     exportedAt: Date.now(),
     settings: { locale, theme, volumeUnit, measureUnit, defaultIntervalMin, quietHours, dayStartHour },
-    data: { babies, feedings, diapers, measurements, sleeps, medications, vaccines, reminders },
+    data: {
+      babies,
+      feedings,
+      diapers,
+      measurements,
+      sleeps,
+      medications,
+      vaccines,
+      // Push bookkeeping belongs to this device only.
+      reminders: reminders.map((r) => {
+        const copy = { ...r };
+        delete copy.pushJobs;
+        delete copy.pushEndpoint;
+        return copy;
+      }),
+    },
   };
 }
 

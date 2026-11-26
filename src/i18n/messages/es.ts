@@ -152,7 +152,7 @@ export const es: Record<keyof typeof en, string> = {
   "reminder.notifIos": "En iPhone, primero añade la app a la pantalla de inicio y luego activa las notificaciones.",
   "reminder.enableNotif": "Activar notificaciones",
   "reminder.limits":
-    "Las alertas suenan con la app abierta o en segundo plano. Una app totalmente cerrada no puede despertarse sin un servidor, así que añade las importantes también a tu calendario.",
+    "Sin las alertas con la app cerrada (abajo), las alertas suenan con la app abierta o en segundo plano. Añade las importantes también a tu calendario.",
   "reminder.others": "Otras alertas",
   "reminder.exportIcs": "Añadir al calendario",
   "reminder.icsHint": "El archivo de calendario (.ics) funciona con Apple, Google y Outlook y avisa aunque esta app esté cerrada.",
@@ -183,6 +183,18 @@ export const es: Record<keyof typeof en, string> = {
   "reminder.dismiss": "Descartar",
   "reminder.snooze": "Posponer",
   "reminder.snoozeMin": "{n} min",
+
+  // push
+  "push.title": "Alertas con la app cerrada",
+  "push.body": "Opcional. Entrega las alertas mediante el servicio push de tu teléfono aunque la app no esté abierta.",
+  "push.privacy": "Para ello se envían a un servicio de programación una dirección push y las horas de las alertas. Los nombres, notas y datos de salud nunca salen de tu dispositivo.",
+  "push.test": "Enviar una notificación de prueba",
+  "push.testSent": "Prueba enviada. Debería llegar en unos segundos.",
+  "push.denied": "Las notificaciones están bloqueadas. Permítelas en los ajustes del navegador o del teléfono e inténtalo de nuevo.",
+  "push.unsupported": "Este navegador no admite notificaciones push.",
+  "push.iosInstall": "En iPhone, primero añade la app a la pantalla de inicio (Compartir y luego Añadir a pantalla de inicio) y después activa esto.",
+  "push.notConfigured": "No está configurado en este servidor. Las alertas siguen sonando con la app abierta.",
+  "push.error": "No se pudo conectar con el servicio de notificaciones. Revisa tu conexión e inténtalo de nuevo.",
 
   // nudges
   "nudge.backupTitle": "Respalda tus datos",

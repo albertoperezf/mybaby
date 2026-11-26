@@ -105,6 +105,9 @@ export interface Reminder {
   nextFireAt?: number; // when it should next alert; past + not dismissed = due
   notifiedFor?: number; // nextFireAt value an OS notification was already shown for
   lastDismissedAt?: number;
+  /** Device-local: scheduled Web Push deliveries for this reminder (never exported). */
+  pushJobs?: { at: number; id: string }[];
+  pushEndpoint?: string;
   createdAt: number;
   updatedAt: number;
   deletedAt?: number;
@@ -134,6 +137,7 @@ export interface SettingsValues {
   lastBackupAt: number | null;
   installHintDismissedAt: number | null;
   backupNudgeSnoozedAt: number | null;
+  pushEnabled: boolean;
 }
 
 export type SettingKey = keyof SettingsValues;

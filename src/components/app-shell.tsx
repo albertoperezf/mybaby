@@ -11,6 +11,7 @@ import type { ID, ThemeSetting } from "@/db/types";
 import { Onboarding } from "@/features/onboarding";
 import { QuickLogSheet } from "@/features/feeding/quick-log";
 import { DueBanner, ReminderEngine } from "@/features/reminders/engine";
+import { PushSync } from "@/features/push/push-sync";
 import { I18nProvider, useT, type MessageKey } from "@/i18n";
 import { BRAND } from "@/lib/brand";
 import { requestPersistence } from "@/lib/pwa";
@@ -130,6 +131,7 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
   return (
     <AppContextProvider value={value}>
       <ReminderEngine />
+      <PushSync />
       <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside className="sticky top-0 hidden h-dvh flex-col gap-6 border-r border-line bg-surface p-5 lg:flex">
           <div className="flex items-center justify-between gap-2">
