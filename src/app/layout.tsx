@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { SerwistProvider } from "@serwist/turbopack/react";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { ReactNode } from "react";
 import splash from "../../public/icons/splash.json";
 import { BRAND } from "@/lib/brand";
@@ -58,6 +60,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
           {children}
         </SerwistProvider>
+        {/* Both load from this site's own /_vercel path, so the CSP stays 'self'. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

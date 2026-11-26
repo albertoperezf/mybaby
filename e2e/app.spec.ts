@@ -285,7 +285,7 @@ test.describe("vaccines", () => {
     await page.getByRole("switch", { name: "Vaccine visit reminders" }).click();
     await page.waitForTimeout(1500);
     await page.getByRole("link", { name: "Reminders" }).first().click();
-    await expect(page.getByText(/Vaccines on .*DTaP #1/).first()).toBeVisible();
+    await expect(page.getByText(/Vaccines on .*Hepatitis B #1/).first()).toBeVisible();
   });
 
   test("vaccine record in Spanish", async ({ page }) => {

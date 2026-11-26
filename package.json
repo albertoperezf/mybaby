@@ -18,6 +18,8 @@
     "@date-fns/tz": "^1.5.0",
     "@serwist/turbopack": "^9.5.15",
     "@upstash/qstash": "^2.12.2",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.1.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "dexie": "^4.4.7",
