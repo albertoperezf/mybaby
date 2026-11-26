@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { BRAND } from "@/lib/brand";
 
 const features = [
@@ -14,7 +15,10 @@ export default function Landing() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col gap-10 px-5 py-12">
       <header className="flex flex-col gap-4">
-        <h1 className="text-4xl font-bold tracking-tight">{BRAND.name}</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-4xl font-bold tracking-tight">{BRAND.name}</h1>
+          <ThemeToggle toDarkLabel="Switch to dark mode" toLightLabel="Switch to light mode" />
+        </div>
         <p className="text-lg text-muted">{BRAND.description}</p>
         <div className="flex flex-wrap gap-3">
           <Link

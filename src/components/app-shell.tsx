@@ -14,7 +14,9 @@ import { DueBanner, ReminderEngine } from "@/features/reminders/engine";
 import { I18nProvider, useT, type MessageKey } from "@/i18n";
 import { BRAND } from "@/lib/brand";
 import { requestPersistence } from "@/lib/pwa";
+import { applyTheme } from "@/lib/theme";
 import { AppContextProvider } from "./app-context";
+import { ThemeToggle } from "./theme-toggle";
 import { ToastProvider } from "./ui";
 
 const NAV: { href: string; label: MessageKey; icon: LucideIcon }[] = [
@@ -30,7 +32,7 @@ function useThemeSync(theme: ThemeSetting | undefined) {
     if (!theme) return;
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
-      document.documentElement.dataset.theme = theme === "system" ? (media.matches ? "dark" : "light") : theme;
+      applyTheme(theme === "system" ? (media.matches ? "dark" : "light") : theme);
     };
     apply();
     localStorage.setItem("theme", theme);
@@ -130,7 +132,10 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
       <ReminderEngine />
       <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside className="sticky top-0 hidden h-dvh flex-col gap-6 border-r border-line bg-surface p-5 lg:flex">
-          <p className="text-xl font-bold">{BRAND.name}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xl font-bold">{BRAND.name}</p>
+            <ThemeToggle toDarkLabel={t("theme.toDark")} toLightLabel={t("theme.toLight")} />
+          </div>
           {switcher}
           <nav aria-label={t("nav.main")} className="flex flex-col gap-1">
             {NAV.map(({ href, label, icon: Icon }) => (
@@ -151,11 +156,12 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
         </aside>
 
         <div className="flex min-w-0 flex-col">
-          {switcher && (
-            <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">{switcher}</header>
-          )}
+          <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
+            {switcher ?? <span className="text-lg font-bold">{BRAND.name}</span>}
+            <ThemeToggle toDarkLabel={t("theme.toDark")} toLightLabel={t("theme.toLight")} />
+          </header>
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-44 pt-4 lg:p-8 lg:pb-28">
-            <div className={clsx(!switcher && "pt-[env(safe-area-inset-top)]")}>
+            <div>
               <DueBanner />
               {children}
             </div>

@@ -227,6 +227,8 @@ export const es: Record<keyof typeof en, string> = {
   "settings.themeLight": "Claro",
   "settings.themeDark": "Oscuro",
   "settings.themeNight": "Noche",
+  "theme.toDark": "Cambiar a modo oscuro",
+  "theme.toLight": "Cambiar a modo claro",
   "settings.nightHint": "Noche es un tema tenue y rojizo, más suave para ojos cansados.",
   "settings.volumeUnit": "Volumen",
   "settings.measureUnit": "Peso y longitud",

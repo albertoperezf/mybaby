@@ -225,6 +225,8 @@ export const en = {
   "settings.themeLight": "Light",
   "settings.themeDark": "Dark",
   "settings.themeNight": "Night",
+  "theme.toDark": "Switch to dark mode",
+  "theme.toLight": "Switch to light mode",
   "settings.nightHint": "Night is a dim, red-tinted theme that is easier on tired eyes.",
   "settings.volumeUnit": "Volume",
   "settings.measureUnit": "Weight and length",

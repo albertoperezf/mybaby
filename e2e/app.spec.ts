@@ -138,6 +138,39 @@ test.describe("backup", () => {
   });
 });
 
+test.describe("light/dark toggle", () => {
+  test.use({ colorScheme: "light" });
+
+  test("landing page toggle switches and persists", async ({ page }) => {
+    await page.goto("/");
+    const html = page.locator("html");
+    await expect(html).toHaveAttribute("data-theme", "light");
+    await page.getByRole("button", { name: "Switch to dark mode" }).click();
+    await expect(html).toHaveAttribute("data-theme", "dark");
+    await page.reload();
+    await expect(html).toHaveAttribute("data-theme", "dark");
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(html).toHaveAttribute("data-theme", "light");
+  });
+
+  test("in-app toggle persists across reloads and matches Settings", async ({ page }) => {
+    await onboard(page);
+    const html = page.locator("html");
+    await page.getByRole("button", { name: "Switch to dark mode" }).click();
+    await expect(html).toHaveAttribute("data-theme", "dark");
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Ada", level: 1 })).toBeVisible();
+    await expect(html).toHaveAttribute("data-theme", "dark");
+
+    await page.getByRole("link", { name: "Settings" }).first().click();
+    await expect(page.getByRole("radio", { name: "Dark", exact: true })).toHaveAttribute("aria-checked", "true");
+
+    await page.getByRole("button", { name: "Switch to light mode" }).click();
+    await expect(html).toHaveAttribute("data-theme", "light");
+    await expect(page.getByRole("radio", { name: "Light", exact: true })).toHaveAttribute("aria-checked", "true");
+  });
+});
+
 test.describe("i18n and themes", () => {
   test("switches to Spanish", async ({ page }) => {
     await onboard(page);
