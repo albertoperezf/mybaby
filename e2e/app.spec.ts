@@ -204,6 +204,24 @@ test.describe("light/dark toggle", () => {
     await expect(html).toHaveAttribute("data-theme", "light");
   });
 
+  test("landing page interactive preview, EN/ES switch and WCAG A/AA", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "3 oz", exact: true }).click();
+    await expect(page.getByText("Logged 3 oz")).toBeVisible();
+    await page.getByRole("button", { name: "Sleep", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Wake up", exact: true })).toBeVisible();
+
+    await page.getByRole("radio", { name: "es", exact: true }).click();
+    await expect(page.getByRole("link", { name: /Abrir MyBabyLog/ }).first()).toBeVisible();
+
+    for (const mode of ["light", "dark"] as const) {
+      if (mode === "dark") await page.getByRole("button", { name: "Cambiar a modo oscuro" }).click();
+      await page.waitForTimeout(200);
+      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+      expect(results.violations.map((v) => `landing ${mode}: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
+    }
+  });
+
   test("in-app toggle persists across reloads and matches Settings", async ({ page }) => {
     await onboard(page);
     const html = page.locator("html");
