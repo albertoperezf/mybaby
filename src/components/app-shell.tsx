@@ -214,7 +214,7 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
         </aside>
 
         <div className="flex min-w-0 flex-col">
-          <header className="flex items-center justify-between gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden print:hidden">
+          <header className="flex items-center justify-between gap-3 px-4 pb-1 pt-[calc(env(safe-area-inset-top)+0.75rem)] lg:hidden print:hidden">
             <div className="min-w-0 flex-1 overflow-x-auto">{babies.length > 1 ? switcher : <BrandMark />}</div>
             <ThemeToggle toDarkLabel={t("theme.toDark")} toLightLabel={t("theme.toLight")} />
           </header>

@@ -35,7 +35,7 @@ export function Onboarding({ settings }: { settings: SettingsValues }) {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 pb-8 pt-[max(2rem,env(safe-area-inset-top))]">
+    <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 pb-8 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
       <header className="flex items-center gap-4">
         <MoonIllustration />
         <div>

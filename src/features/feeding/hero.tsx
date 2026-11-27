@@ -43,7 +43,7 @@ function Ring({ ratio, state, children, label }: { ratio: number | null; state: 
           />
         )}
       </svg>
-      <div className="relative flex flex-col items-center text-center">{children}</div>
+      <div className="relative flex w-full flex-col items-center px-4 text-center sm:px-5">{children}</div>
     </div>
   );
 }
@@ -87,10 +87,22 @@ export function Hero() {
             <BottleIllustration className="!size-16 sm:!size-20" />
           ) : (
             <>
-              <span key={last.id} className="animate-pop text-3xl font-extrabold tabular-nums text-feed-ink sm:text-4xl">
+              <span
+                key={last.id}
+                className={clsx(
+                  "animate-pop whitespace-nowrap font-extrabold leading-none tabular-nums text-feed-ink",
+                  elapsed.length >= 8
+                    ? "text-base sm:text-xl"
+                    : elapsed.length >= 6
+                      ? "text-xl sm:text-2xl"
+                      : "text-2xl sm:text-3xl",
+                )}
+              >
                 {elapsed}
               </span>
-              <span className="max-w-24 text-center text-[0.65rem] font-bold uppercase leading-tight tracking-wide text-muted sm:max-w-none sm:text-xs">{t("hero.sinceLast")}</span>
+              <span className="mt-1 max-w-20 text-center text-[0.625rem] font-bold uppercase leading-tight tracking-wide text-muted sm:max-w-28 sm:text-xs">
+                {t("hero.sinceLast")}
+              </span>
             </>
           )}
         </Ring>

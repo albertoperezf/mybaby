@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: BRAND.name,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     startupImage: splash.map(({ file, cw, ch, dpr }) => ({
       url: file,
       media: `(device-width: ${cw}px) and (device-height: ${ch}px) and (-webkit-device-pixel-ratio: ${dpr}) and (orientation: portrait)`,
