@@ -111,6 +111,8 @@ export const es: Record<keyof typeof en, string> = {
   // log + stats
   "log.empty": "Una página nueva. Registra la primera toma con el botón +.",
   "log.feeding": "Toma",
+  "log.oneFeeding": "1 toma",
+  "log.manyFeedings": "{n} tomas",
   "log.loadMore": "Cargar 2 semanas más",
   "stats.dailyTotals": "Totales diarios, últimos 7 días",
   "stats.todayTotal": "Hoy",

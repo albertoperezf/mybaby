@@ -117,7 +117,7 @@ export default function LogPage() {
                   {formatDayHeading(key, locale, now)}
                 </h2>
                 <p className="text-sm text-muted">
-                  {count} {t("stats.feedings").toLowerCase()}
+                  {count === 1 ? t("log.oneFeeding") : t("log.manyFeedings", { n: count })}
                   {ml > 0 ? ` · ${formatVolume(ml, settings.volumeUnit)}` : ""}
                 </p>
               </div>

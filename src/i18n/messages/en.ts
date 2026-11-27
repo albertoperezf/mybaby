@@ -109,6 +109,8 @@ export const en = {
   // log + stats
   "log.empty": "A fresh page. Log the first feed with the + button.",
   "log.feeding": "Feeding",
+  "log.oneFeeding": "1 feeding",
+  "log.manyFeedings": "{n} feedings",
   "log.loadMore": "Load 2 more weeks",
   "stats.dailyTotals": "Daily totals, last 7 days",
   "stats.todayTotal": "Today",
