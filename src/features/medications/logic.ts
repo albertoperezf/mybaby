@@ -1,8 +1,13 @@
 import type { Medication } from "@/db/types";
+import type { MessageKey } from "@/i18n";
 import { dayKey } from "@/lib/time";
 
 export const MED_UNITS = ["ml", "drops", "IU", "mg", "tsp", "puffs"] as const;
 export type MedUnit = (typeof MED_UNITS)[number];
+
+export function translateMedUnit(unit: string, t: (key: MessageKey) => string): string {
+  return (MED_UNITS as readonly string[]).includes(unit) ? t(`med.unit.${unit}` as MessageKey) : unit;
+}
 
 export interface RecentMedicine {
   key: string;

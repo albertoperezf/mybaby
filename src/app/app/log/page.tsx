@@ -13,7 +13,7 @@ import { rescheduleFeedingReminder } from "@/features/reminders/actions";
 import { DailyTotalsChart } from "@/features/feeding/daily-chart";
 import { StatTiles } from "@/features/feeding/stat-tiles";
 import { useRecent } from "@/features/feeding/use-recent";
-import { formatDose } from "@/features/medications/logic";
+import { formatDose, translateMedUnit } from "@/features/medications/logic";
 import { MedicationSheet } from "@/features/medications/medication-sheet";
 import { formatDurationShort } from "@/features/timers/timer-store";
 import { useLocale, useT, type MessageKey } from "@/i18n";
@@ -150,7 +150,7 @@ export default function LogPage() {
                             : e.kind === "diaper"
                               ? t(`diaper.${e.row.type}` as MessageKey)
                               : e.kind === "med"
-                                ? `${e.row.name} · ${formatDose(e.row.dose, e.row.unit)}`
+                                ? `${e.row.name} · ${formatDose(e.row.dose, translateMedUnit(e.row.unit, t))}`
                                 : e.row.endedAt
                                   ? `${t("timer.sleepLabel")} · ${formatDurationShort((e.row.endedAt - e.row.startedAt) / 1000)}`
                                   : t("timer.activeSleep")}

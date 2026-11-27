@@ -10,6 +10,7 @@ import { formatAge } from "@/lib/age";
 import { MIN, formatClock, formatElapsed, toDateInput } from "@/lib/time";
 import { formatVolume } from "@/lib/units";
 import { ageInDays } from "@/lib/who";
+import { formatDurationShort } from "@/features/timers/timer-store";
 import { dayPart, feedRatio, feedState, type FeedState } from "./progress";
 
 const R = 72;
@@ -117,7 +118,11 @@ export function Hero() {
             <>
               <p className="text-sm font-bold uppercase tracking-wide text-muted">{t("home.lastFed")}</p>
               <p className="text-xl font-extrabold">
-                {last.amountMl !== undefined ? `${formatVolume(last.amountMl, settings.volumeUnit)} · ` : ""}
+                {last.kind === "breast"
+                  ? `${t("timer.breastLabel")}${last.durationSec ? ` ${formatDurationShort(last.durationSec)}` : ""} · `
+                  : last.amountMl !== undefined
+                    ? `${formatVolume(last.amountMl, settings.volumeUnit)} · `
+                    : ""}
                 {formatClock(last.at, locale)}
               </p>
               <p

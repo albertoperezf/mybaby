@@ -413,7 +413,7 @@ function QuickLogForm({
                 disabled={!hasDur && !(feedKind === "pump" && hasAmount)}
                 onClick={() => logFeeding(hasAmount ? toMl(parsedAmount, formUnit) : undefined, formUnit)}
               >
-                {editing ? t("common.save") : t("common.save")}
+                {t("common.save")}
               </Button>
             </>
           )}

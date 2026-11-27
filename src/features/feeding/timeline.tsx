@@ -5,7 +5,7 @@ import { BottleIcon, DiaperIcon, bottleFillLevel } from "@/components/activity-i
 import { useApp } from "@/components/app-context";
 import { Card, SectionTitle } from "@/components/ui";
 import type { Diaper, DiaperType, Feeding, Medication, Sleep } from "@/db/types";
-import { formatDose } from "@/features/medications/logic";
+import { formatDose, translateMedUnit } from "@/features/medications/logic";
 import { formatDurationShort } from "@/features/timers/timer-store";
 import { useLocale, useT, type MessageKey } from "@/i18n";
 import { formatClock } from "@/lib/time";
@@ -102,7 +102,7 @@ export function TodayTimeline({
         kind: "med" as TileKind,
         at: m.at,
         id: m.id,
-        label: formatDose(m.dose, m.unit),
+        label: formatDose(m.dose, translateMedUnit(m.unit, t)),
       })),
   ].sort((a, b) => b.at - a.at);
 

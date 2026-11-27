@@ -11,21 +11,23 @@ export default function Privacy() {
       </Link>
       <h1 className="text-3xl font-bold">Privacy</h1>
       <p>
-        Everything you enter (babies, feedings, diapers, reminders, measurements, notes) is stored in your browser&apos;s
-        IndexedDB on this device. It is never sent to a server. There are no accounts and no ads.
+        Everything you enter (babies, feedings, diapers, sleep, reminders, growth measurements, vaccines, medications,
+        doctor visit notes) is stored in your browser&apos;s IndexedDB on this device. It is never sent to a server.
+        There are no accounts and no ads.
       </p>
       <h2 className="text-xl font-semibold">Backups</h2>
       <p>
         Because data lives only on your device, clearing browser data or losing the device deletes it. Use Settings →
-        Backup to export a JSON or CSV file and keep it somewhere safe. Importing a file merges it back in.
+        Backup to export a plain or AES-256 encrypted JSON backup (or CSV files) and keep it somewhere safe. Passphrases
+        are never saved. Importing a file merges it back in.
       </p>
       <h2 className="text-xl font-semibold">Network</h2>
       <p>
-        The site serves the app files and the anonymous statistics above; the app&apos;s content security policy blocks it
-        from contacting any other server. Optional closed-app alerts (off by default, only if the site owner has set them up) send an
-        anonymous push address and the times of your reminders to the site&apos;s server and a scheduling service so a
-        notification can be delivered later. Baby names, notes and health data are never sent; the notification text is
-        built on your device.
+        The site serves the app files and the anonymous statistics described below; the app&apos;s content security
+        policy blocks it from contacting any other server. Optional closed-app alerts (off by default, only if the site
+        owner has set them up) send an anonymous push address and the times of your reminders to the site&apos;s server
+        and a scheduling service so a notification can be delivered later. Baby names, notes and health data are never
+        sent; the notification text is built on your device.
       </p>
       <h2 className="text-xl font-semibold">Site statistics</h2>
       <p>

@@ -189,7 +189,7 @@ export function LandingPage() {
                 ))}
                 <span className="inline-flex items-center gap-1 rounded-xl bg-diaper-tint px-3 py-1.5 text-xs font-extrabold text-diaper-ink">
                   <Droplets className="size-3.5 text-diaper" />
-                  Wet / Dirty
+                  {c.bento.diaperChip}
                 </span>
               </div>
             </article>
@@ -208,10 +208,10 @@ export function LandingPage() {
                   <Moon className="size-3.5 text-sleep" /> 01:24:10
                 </span>
                 <span className="rounded-xl bg-feed-tint px-3 py-1.5 text-xs font-extrabold text-feed-ink tabular-nums">
-                  L 08:15 · R 06:40
+                  {c.bento.breastChip}
                 </span>
                 <span className="rounded-xl bg-remind-tint px-3 py-1.5 text-xs font-extrabold text-remind-ink">
-                  Pump · L+R
+                  {c.bento.pumpChip}
                 </span>
               </div>
             </article>
@@ -242,7 +242,7 @@ export function LandingPage() {
                   <Check className="size-3.5" /> DTaP #1 · CDC / AEP
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-remind-tint px-3 py-1.5 text-xs font-extrabold text-remind-ink">
-                  <Pill className="size-3.5 text-remind" /> Vitamin D · 400 IU
+                  <Pill className="size-3.5 text-remind" /> {c.bento.medChip}
                 </span>
               </div>
             </article>

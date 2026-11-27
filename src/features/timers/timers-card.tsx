@@ -39,8 +39,10 @@ export function TimersCard() {
   const activeSleep = useActiveSleep(baby.id);
   const { breast, pump } = useActiveTimers(baby.id);
 
-  const [pumpAmount, setPumpAmount] = useState("");
+  const [pumpAmounts, setPumpAmounts] = useState<Record<string, string>>({});
   const [pumpUnit, setPumpUnit] = useState<"oz" | "ml">(settings.volumeUnit);
+  const pumpAmount = pumpAmounts[baby.id] ?? "";
+  const setPumpAmount = (value: string) => setPumpAmounts((prev) => ({ ...prev, [baby.id]: value }));
 
   const isAnyRunning = Boolean(activeSleep || breast?.activeSide || pump?.runningSince !== null && pump !== null);
   const [now, setNow] = useState(() => Date.now());
