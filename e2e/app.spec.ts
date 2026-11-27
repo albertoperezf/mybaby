@@ -387,6 +387,35 @@ test.describe("medications", () => {
   });
 });
 
+test.describe("doctor visits", () => {
+  test.use({ colorScheme: "light" });
+
+  test("add a visit with questions, check one off inline, and save notes", async ({ page }) => {
+    await onboard(page);
+    await page.getByRole("link", { name: "Health" }).first().click();
+    await page.getByRole("link", { name: "Visits" }).first().click();
+    await expect(page.getByRole("heading", { name: "Doctor visits", level: 1 })).toBeVisible();
+
+    await page.getByRole("button", { name: "Add visit" }).first().click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByRole("button", { name: "Well-child checkup" }).click();
+    await sheet.getByLabel("Doctor or clinic").fill("City Pediatrics");
+    await sheet.getByLabel("Questions to ask").fill("When to start tummy time?");
+    await sheet.getByRole("button", { name: "Add", exact: true }).click();
+    await sheet.getByLabel("Doctor's notes & advice").fill("All looks great.");
+    await sheet.getByRole("button", { name: "Save" }).click();
+
+    await expect(page.getByText("Visit saved")).toBeVisible();
+    await expect(page.getByText("Well-child checkup")).toBeVisible();
+    await expect(page.getByText("0 of 1 asked")).toBeVisible();
+
+    const qBox = page.getByRole("checkbox", { name: "When to start tummy time?" });
+    await qBox.click();
+    await expect(qBox).toBeChecked();
+    await expect(page.getByText("1 of 1 asked")).toBeVisible();
+  });
+});
+
 test.describe("i18n and themes", () => {
   test("switches to Spanish", async ({ page }) => {
     await onboard(page);
@@ -420,11 +449,13 @@ test.describe("i18n and themes", () => {
         expect(vaccineResults.violations.map((v) => `vaccines ${step}: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
       }
 
-      // Medications page
-      await page.getByRole("link", { name: "Meds", exact: true }).first().click();
-      await page.waitForTimeout(300);
-      const medResults = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
-      expect(medResults.violations.map((v) => `meds: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
+      // Medications & Doctor visits pages
+      for (const tab of ["Meds", "Visits"]) {
+        await page.getByRole("link", { name: tab, exact: true }).first().click();
+        await page.waitForTimeout(300);
+        const tabResults = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+        expect(tabResults.violations.map((v) => `${tab}: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
+      }
     });
   }
 });

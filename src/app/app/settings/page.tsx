@@ -47,7 +47,7 @@ export default function SettingsPage() {
     }
   }
 
-  async function exportCsv(kind: "feedings" | "diapers" | "measurements" | "vaccines" | "sleeps" | "medications") {
+  async function exportCsv(kind: "feedings" | "diapers" | "measurements" | "vaccines" | "sleeps" | "medications" | "visits") {
     const [{ buildCsv, backupFilename }, { saveFile }] = await Promise.all([
       import("@/features/backup/export"),
       import("@/features/backup/save-file"),
@@ -229,6 +229,7 @@ export default function SettingsPage() {
               <Button onClick={() => exportCsv("measurements")}>{t("backup.csvGrowth")}</Button>
               <Button onClick={() => exportCsv("vaccines")}>{t("backup.csvVaccines")}</Button>
               <Button onClick={() => exportCsv("medications")}>{t("backup.csvMeds")}</Button>
+              <Button onClick={() => exportCsv("visits")}>{t("backup.csvVisits")}</Button>
             </div>
 
             <hr className="border-line" />

@@ -10,6 +10,7 @@ import {
   medicationSchema,
   sleepSchema,
   vaccineSchema,
+  visitSchema,
   type BackupData,
   type BackupFile,
 } from "@/db/zod";
@@ -122,6 +123,7 @@ export async function importBackupText(text: string, mode: "merge" | "replace", 
 export function detectCsvKind(header: string[]): CsvKind | null {
   const h = new Set(header);
   if (h.has("started_iso")) return "sleeps";
+  if (h.has("visited_on") && h.has("reason")) return "visits";
   if (h.has("code") && (h.has("given_on") || h.has("due_on"))) return "vaccines";
   if (h.has("time_iso") && h.has("dose") && h.has("unit")) return "medications";
   if (h.has("time_iso") && h.has("type")) return "diapers";
@@ -206,6 +208,29 @@ export async function importCsvText(text: string, fallbackBabyId: ID): Promise<I
         at: Date.parse(r.time_iso),
         tz: r.tz || deviceTz(),
         note: r.note ? unguardText(r.note) : undefined,
+      });
+    } else if (kind === "visits") {
+      const rawQ = r.questions ? unguardText(r.questions) : "";
+      const questions = rawQ
+        ? rawQ
+            .split(" | ")
+            .map((part) => part.trim())
+            .filter(Boolean)
+            .map((part) => {
+              const done = part.startsWith("[x] ");
+              const text = part.replace(/^\[[x ]\]\s*/i, "").trim();
+              return { id: ulid(), text, done };
+            })
+            .filter((q) => q.text.length > 0)
+        : [];
+      result = visitSchema.safeParse({
+        ...common,
+        visitedOn: r.visited_on,
+        reason: unguardText(r.reason ?? ""),
+        provider: r.provider ? unguardText(r.provider) : undefined,
+        questions,
+        summary: r.summary ? unguardText(r.summary) : undefined,
+        followUpOn: r.follow_up_on || undefined,
       });
     } else if (kind === "diapers") {
       result = diaperSchema.safeParse({

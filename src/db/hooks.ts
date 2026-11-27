@@ -4,7 +4,7 @@ import Dexie from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo } from "react";
 import { db } from "./schema";
-import type { Baby, Diaper, Feeding, ID, Measurement, Medication, Reminder, Sleep, Vaccine } from "./types";
+import type { Baby, Diaper, DoctorVisit, Feeding, ID, Measurement, Medication, Reminder, Sleep, Vaccine } from "./types";
 
 const FOREVER = Number.MAX_SAFE_INTEGER;
 
@@ -122,6 +122,18 @@ export function useVaccines(babyId: ID | null | undefined): Vaccine[] | undefine
   );
 }
 
+export function useVisits(babyId: ID | null | undefined): DoctorVisit[] | undefined {
+  return useLiveQuery(
+    async () =>
+      babyId
+        ? (await db.visits.where("babyId").equals(babyId).filter((v) => !v.deletedAt).toArray()).sort(
+            (a, b) => b.visitedOn.localeCompare(a.visitedOn) || b.createdAt - a.createdAt,
+          )
+        : [],
+    [babyId],
+  );
+}
+
 export function useMedications(babyId: ID | null | undefined, since = 0): Medication[] | undefined {
   return useLiveQuery(
     async () =>
@@ -180,7 +192,8 @@ export function useEntryCount(): number | undefined {
       (await db.diapers.count()) +
       (await db.measurements.count()) +
       (await db.sleeps.count()) +
-      (await db.medications.count()),
+      (await db.medications.count()) +
+      (await db.visits.count()),
     [],
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import clsx from "clsx";
-import { ChevronDown, ChevronUp, Droplets, Milk } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { BottleIcon, DiaperIcon, bottleFillLevel } from "@/components/activity-icons";
 import { useApp } from "@/components/app-context";
 import { Button, Field, Segmented, Sheet, inputClass } from "@/components/ui";
 import { db } from "@/db/schema";
@@ -277,7 +278,7 @@ function QuickLogForm({
                         className="flex-col !px-1 !text-base leading-tight"
                         onClick={() => logFeeding(p.ml, unit)}
                       >
-                        <Milk aria-hidden className="size-5" />
+                        <BottleIcon level={bottleFillLevel(p.ml)} className="size-6" />
                         <span>{p.label}</span>
                       </Button>
                     ))}
@@ -424,7 +425,7 @@ function QuickLogForm({
             <div className="grid grid-cols-2 gap-2">
               {(["wet", "dirty", "both", "dry"] as const).map((type) => (
                 <Button key={type} size="lg" onClick={() => logDiaper(type)}>
-                  <Droplets aria-hidden className="size-5" />
+                  <DiaperIcon type={type} className="size-6 text-diaper" />
                   {t(`diaper.${type}` as MessageKey)}
                 </Button>
               ))}

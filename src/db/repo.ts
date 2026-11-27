@@ -1,7 +1,7 @@
 import { ulid } from "ulid";
 import { db } from "./schema";
 import { deviceId, getSetting, setSetting } from "./settings";
-import type { Baby, Diaper, DiaperType, Feeding, ID, Measurement, Medication, Sleep } from "./types";
+import type { Baby, Diaper, DiaperType, DoctorVisit, Feeding, ID, Measurement, Medication, Sleep, VisitQuestion } from "./types";
 import { deviceTz } from "@/lib/time";
 
 export const BABY_COLORS = ["#e07a5f", "#f2a65a", "#81b29a", "#8e7dbe", "#e56b9a", "#4fa3b8"];
@@ -43,9 +43,9 @@ export async function setBabyArchived(id: ID, archived: boolean): Promise<void> 
 export async function deleteBabyForever(id: ID): Promise<void> {
   await db.transaction(
     "rw",
-    [db.babies, db.feedings, db.diapers, db.measurements, db.sleeps, db.medications, db.vaccines, db.reminders, db.settings],
+    [db.babies, db.feedings, db.diapers, db.measurements, db.sleeps, db.medications, db.vaccines, db.visits, db.reminders, db.settings],
     async () => {
-      for (const table of [db.feedings, db.diapers, db.measurements, db.sleeps, db.medications, db.vaccines]) {
+      for (const table of [db.feedings, db.diapers, db.measurements, db.sleeps, db.medications, db.vaccines, db.visits]) {
         await table.where("babyId").equals(id).delete();
       }
       await db.reminders.where("babyId").equals(id).delete();
@@ -188,9 +188,59 @@ export async function updateMedication(
   await db.medications.update(id, next);
 }
 
+// ---- doctor visits ---------------------------------------------------------
+
+export interface VisitInput {
+  visitedOn: string;
+  reason: string;
+  provider?: string;
+  questions?: VisitQuestion[];
+  summary?: string;
+  followUpOn?: string;
+  reminderId?: ID;
+}
+
+export async function addVisit(babyId: ID, input: VisitInput): Promise<DoctorVisit> {
+  const row: DoctorVisit = {
+    id: ulid(),
+    babyId,
+    visitedOn: input.visitedOn,
+    reason: input.reason.trim(),
+    provider: input.provider?.trim() || undefined,
+    questions: (input.questions ?? []).map((q) => ({ ...q, text: q.text.trim() })).filter((q) => q.text.length > 0),
+    summary: input.summary?.trim() || undefined,
+    followUpOn: input.followUpOn || undefined,
+    reminderId: input.reminderId,
+    ...(await stamp()),
+  };
+  await db.visits.add(row);
+  return row;
+}
+
+export async function updateVisit(id: ID, patch: Partial<VisitInput>): Promise<void> {
+  const next: Partial<DoctorVisit> = { updatedAt: Date.now() };
+  if (patch.visitedOn !== undefined) next.visitedOn = patch.visitedOn;
+  if (patch.reason !== undefined) next.reason = patch.reason.trim();
+  if (patch.provider !== undefined) next.provider = patch.provider.trim() || undefined;
+  if (patch.questions !== undefined) {
+    next.questions = patch.questions.map((q) => ({ ...q, text: q.text.trim() })).filter((q) => q.text.length > 0);
+  }
+  if (patch.summary !== undefined) next.summary = patch.summary.trim() || undefined;
+  if (patch.followUpOn !== undefined) next.followUpOn = patch.followUpOn || undefined;
+  if (patch.reminderId !== undefined) next.reminderId = patch.reminderId;
+  await db.visits.update(id, next);
+}
+
+export async function toggleVisitQuestion(visitId: ID, questionId: string): Promise<void> {
+  const visit = await db.visits.get(visitId);
+  if (!visit) return;
+  const questions = visit.questions.map((q) => (q.id === questionId ? { ...q, done: !q.done } : q));
+  await db.visits.update(visitId, { questions, updatedAt: Date.now() });
+}
+
 // ---- generic soft delete / undo -------------------------------------------
 
-type SoftTable = "feedings" | "diapers" | "measurements" | "sleeps" | "medications";
+type SoftTable = "feedings" | "diapers" | "measurements" | "sleeps" | "medications" | "visits";
 
 export async function softDelete(table: SoftTable, ids: ID[]): Promise<void> {
   const now = Date.now();

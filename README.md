@@ -14,7 +14,8 @@ A private, offline-first PWA for newborn care: feeding and diaper log, reminders
 - **Growth**: weight, length and head circumference per visit, charted against WHO Child Growth Standards (0-5 years) with percentiles; corrected age for preterm babies.
 - **Vaccines**: pick a schedule per baby (US CDC 2025 or Spain AEP 2026), see each dose with its recommended window, due-now / upcoming status and "needs 4+ weeks after the previous dose" rules, record a dose in one tap or with date, lot number and clinic, skip a dose, add other vaccines (travel, catch-up), progress summary, optional "visit coming up" reminders, print-friendly vaccine record and CSV export. Schedules live in [src/features/vaccines/schedule-data.ts](src/features/vaccines/schedule-data.ts) with source links and review dates. Informational only: the pediatrician decides what and when, and regional calendars differ.
 - **Medications**: log medicines and vitamins with dosage, unit (`ml`, `drops`, `IU`, `mg`, `tsp`, `puffs`), time and notes; one-tap "Give again" cards for recent medicines showing elapsed time since the last dose and today's count; quick-fill chips; print-friendly history and CSV export/import; integrated into the daily timeline and Log.
-- **Backup**: JSON export/import (merge or replace), CSV export/import for feedings, diapers, sleeps, growth, vaccines and medications, weekly backup nudge, `navigator.storage.persist()`.
+- **Doctor visits**: plan upcoming appointments with a checkable "Questions to ask" list, record doctor's notes, provider, and follow-up dates, optionally schedule a day-before reminder, print visit summaries, and export/import CSV.
+- **Backup**: JSON export/import (merge or replace), CSV export/import for feedings, diapers, sleeps, growth, vaccines, medications and visits, weekly backup nudge, `navigator.storage.persist()`.
 - **PWA**: installable, offline shell, iOS icons and splash screens, home-screen shortcuts.
 - **UI**: mobile-first with bottom nav and thumb-zone button, desktop sidebar dashboard, Light / Dark / Night (red-shifted) themes, English and Spanish, oz/ml and lb-in/kg-cm.
 - **Look and feel ("Soft Dawn")**: warm cream and coral by day, plum twilight in dark mode, ember reds at night; one colour per activity (feeding amber, diapers teal, growth green, reminders plum) used consistently; a home hero with a progress ring toward the next feed, time-of-day greeting and baby age; baby avatars and colours; warm bilingual copy; optional automatic Night theme from 9 PM to 6 AM. Colour tokens live in [src/app/globals.css](src/app/globals.css) and every text pair is checked for WCAG AA by the axe e2e tests.
@@ -112,5 +113,5 @@ This is a personal log, not a medical device. Percentiles are informational and 
 
 ## Roadmap
 
-- **v1**: doctor-visit notes, pediatrician PDF report, share-by-file for a second caregiver, encrypted backup file.
+- **v1**: pediatrician PDF report, share-by-file for a second caregiver, encrypted backup file.
 - **v2**: end-to-end encrypted sync between devices (QR pairing), milestones and photo journal, more locales, optional Capacitor wrapper for widgets and native notifications.

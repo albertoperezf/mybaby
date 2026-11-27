@@ -3,7 +3,7 @@ import { createSerwistRoute } from "@serwist/turbopack";
 // Pages precached so the app shell opens offline right after the first visit.
 // (/~offline is added automatically because the service worker declares it as a fallback;
 // everything in public/, including the UI font, is precached by default.)
-const APP_ROUTES = ["/app", "/app/log", "/app/growth", "/app/vaccines", "/app/medications", "/app/reminders", "/app/settings"];
+const APP_ROUTES = ["/app", "/app/log", "/app/growth", "/app/vaccines", "/app/medications", "/app/visits", "/app/reminders", "/app/settings"];
 
 const revision = process.env.VERCEL_GIT_COMMIT_SHA ?? crypto.randomUUID();
 

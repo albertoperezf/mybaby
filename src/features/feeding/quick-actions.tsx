@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight, Droplets, Milk, Plus, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, Plus, SlidersHorizontal } from "lucide-react";
+import { BottleIcon, DiaperIcon, bottleFillLevel } from "@/components/activity-icons";
 import { useApp } from "@/components/app-context";
 import { Button, SectionTitle } from "@/components/ui";
 import { useLastAmount } from "@/db/hooks";
@@ -10,6 +11,7 @@ import { formatVolume, toMl, volumeNumber } from "@/lib/units";
 import { useLogging } from "./use-logging";
 
 const PRESETS = { oz: [2, 3, 4], ml: [60, 90, 120] } as const;
+const PRESET_LEVELS = [0.28, 0.54, 0.82] as const;
 
 /** One-tap feeding presets and diaper buttons for the home screen. */
 export function QuickActions() {
@@ -27,7 +29,7 @@ export function QuickActions() {
       <section aria-label={t("home.logFeed")}>
         <SectionTitle>{t("home.logFeed")}</SectionTitle>
         <div className="grid grid-cols-2 gap-3">
-          {presetMl.map((ml) => (
+          {presetMl.map((ml, i) => (
             <Button
               key={ml}
               variant="feed"
@@ -36,7 +38,7 @@ export function QuickActions() {
               onClick={() => logFeeding([baby.id], { at: Date.now(), amountMl: ml, enteredUnit: unit })}
               aria-label={t("home.logAmount", { amount: formatVolume(ml, unit) })}
             >
-              <Milk aria-hidden className="size-6 text-feed" />
+              <BottleIcon level={PRESET_LEVELS[i]} className="size-7 text-feed" />
               {formatVolume(ml, unit)}
             </Button>
           ))}
@@ -48,7 +50,7 @@ export function QuickActions() {
               onClick={() => logFeeding([baby.id], { at: Date.now(), amountMl: last.amountMl, enteredUnit: unit })}
               aria-label={t("home.logLast", { amount: formatVolume(last.amountMl, unit) })}
             >
-              <Milk aria-hidden className="size-6" />
+              <BottleIcon level={bottleFillLevel(last.amountMl)} className="size-7" />
               <span className="flex flex-col items-start leading-tight">
                 <span className="text-xs font-semibold opacity-85">{t("quick.last")}</span>
                 <span className="text-xl">{formatVolume(last.amountMl, unit)}</span>
@@ -68,7 +70,7 @@ export function QuickActions() {
         <div className="grid grid-cols-3 gap-3">
           {(["wet", "dirty", "both"] as DiaperType[]).map((type) => (
             <Button key={type} variant="diaper" size="lg" className="flex-col gap-1 rounded-[1.75rem] !px-2 !text-base" onClick={() => logDiaper([baby.id], type)}>
-              <Droplets aria-hidden className="size-6 text-diaper" />
+              <DiaperIcon type={type} className="size-6 text-diaper" />
               {t(`diaper.${type}` as MessageKey)}
             </Button>
           ))}

@@ -79,6 +79,22 @@ export interface Medication extends Base {
   note?: string;
 }
 
+export interface VisitQuestion {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface DoctorVisit extends Base {
+  visitedOn: string; // YYYY-MM-DD
+  reason: string;
+  provider?: string;
+  questions: VisitQuestion[];
+  summary?: string;
+  followUpOn?: string; // YYYY-MM-DD
+  reminderId?: ID;
+}
+
 export interface Vaccine extends Base {
   /** Stable dose key from the schedule, e.g. "dtap-3"; random for custom entries. */
   code: string;
@@ -176,6 +192,7 @@ export const DATA_TABLES = [
   "sleeps",
   "medications",
   "vaccines",
+  "visits",
   "reminders",
 ] as const;
 export type DataTableName = (typeof DATA_TABLES)[number];

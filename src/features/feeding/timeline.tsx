@@ -1,9 +1,10 @@
 "use client";
 
-import { Droplet, Droplets, Heart, Milk, Moon, Pill } from "lucide-react";
+import { Droplet, Heart, Moon, Pill } from "lucide-react";
+import { BottleIcon, DiaperIcon, bottleFillLevel } from "@/components/activity-icons";
 import { useApp } from "@/components/app-context";
 import { Card, SectionTitle } from "@/components/ui";
-import type { Diaper, Feeding, Medication, Sleep } from "@/db/types";
+import type { Diaper, DiaperType, Feeding, Medication, Sleep } from "@/db/types";
 import { formatDose } from "@/features/medications/logic";
 import { formatDurationShort } from "@/features/timers/timer-store";
 import { useLocale, useT, type MessageKey } from "@/i18n";
@@ -11,6 +12,15 @@ import { formatClock } from "@/lib/time";
 import { formatVolume } from "@/lib/units";
 
 type TileKind = "feed" | "breast" | "pump" | "diaper" | "sleep" | "med";
+
+interface TileEntry {
+  kind: TileKind;
+  at: number;
+  id: string;
+  label: string;
+  amountMl?: number;
+  diaperType?: DiaperType;
+}
 
 const TILE_STYLE: Record<TileKind, string> = {
   feed: "bg-feed-tint text-feed-ink",
@@ -39,7 +49,7 @@ export function TodayTimeline({
   const t = useT();
   const locale = useLocale();
 
-  const entries = [
+  const entries: TileEntry[] = [
     ...feedings
       .filter((f) => f.at >= dayStart)
       .map((f) => {
@@ -65,12 +75,19 @@ export function TodayTimeline({
           kind: "feed" as TileKind,
           at: f.at,
           id: f.id,
+          amountMl: f.amountMl,
           label: f.amountMl !== undefined ? formatVolume(f.amountMl, settings.volumeUnit) : t("log.feeding"),
         };
       }),
     ...diapers
       .filter((d) => d.at >= dayStart)
-      .map((d) => ({ kind: "diaper" as TileKind, at: d.at, id: d.id, label: t(`diaper.${d.type}` as MessageKey) })),
+      .map((d) => ({
+        kind: "diaper" as TileKind,
+        at: d.at,
+        id: d.id,
+        diaperType: d.type as DiaperType,
+        label: t(`diaper.${d.type}` as MessageKey),
+      })),
     ...sleeps
       .filter((s) => s.startedAt >= dayStart || (s.endedAt ?? Number.MAX_SAFE_INTEGER) >= dayStart)
       .map((s) => ({
@@ -102,10 +119,10 @@ export function TodayTimeline({
             key={e.id}
             className={`flex min-w-24 shrink-0 snap-start flex-col items-center gap-1 rounded-3xl px-3 py-2.5 ${TILE_STYLE[e.kind]}`}
           >
-            {e.kind === "feed" && <Milk aria-hidden className="size-5 text-feed" />}
+            {e.kind === "feed" && <BottleIcon level={bottleFillLevel(e.amountMl)} className="size-5 text-feed" />}
             {e.kind === "breast" && <Heart aria-hidden className="size-5 text-feed" />}
             {e.kind === "pump" && <Droplet aria-hidden className="size-5 text-remind" />}
-            {e.kind === "diaper" && <Droplets aria-hidden className="size-5 text-diaper" />}
+            {e.kind === "diaper" && e.diaperType && <DiaperIcon type={e.diaperType} className="size-5 text-diaper" />}
             {e.kind === "sleep" && <Moon aria-hidden className="size-5 text-sleep" />}
             {e.kind === "med" && <Pill aria-hidden className="size-5 text-remind" />}
             <span className="text-sm font-extrabold tabular-nums">{e.label}</span>

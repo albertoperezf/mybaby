@@ -1,7 +1,8 @@
 "use client";
 
-import { Droplet, Droplets, Heart, Milk, Moon, Pencil, Pill, Trash2 } from "lucide-react";
+import { Droplet, Heart, Moon, Pencil, Pill, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { BottleIcon, DiaperIcon, bottleFillLevel } from "@/components/activity-icons";
 import { useApp } from "@/components/app-context";
 import { Button, Card, PageTitle, useToast } from "@/components/ui";
 import { EmptyState, MoonIllustration } from "@/components/illustrations";
@@ -134,11 +135,13 @@ export default function LogPage() {
                     <li key={e.row.id} className="flex items-center gap-3 border-b border-line p-3 last:border-b-0">
                       <span className={`grid size-11 shrink-0 place-items-center rounded-full ${iconStyle}`}>
                         {e.kind === "sleep" && <Moon aria-hidden className="size-5" />}
-                        {e.kind === "diaper" && <Droplets aria-hidden className="size-5" />}
+                        {e.kind === "diaper" && <DiaperIcon type={e.row.type} className="size-5" />}
                         {e.kind === "med" && <Pill aria-hidden className="size-5" />}
                         {e.kind === "feed" && e.row.kind === "breast" && <Heart aria-hidden className="size-5" />}
                         {e.kind === "feed" && e.row.kind === "pump" && <Droplet aria-hidden className="size-5" />}
-                        {e.kind === "feed" && e.row.kind !== "breast" && e.row.kind !== "pump" && <Milk aria-hidden className="size-5" />}
+                        {e.kind === "feed" && e.row.kind !== "breast" && e.row.kind !== "pump" && (
+                          <BottleIcon level={bottleFillLevel(e.row.amountMl)} className="size-5" />
+                        )}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold">

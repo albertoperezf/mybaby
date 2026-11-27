@@ -93,6 +93,23 @@ export const vaccineSchema = z.object({
   note,
 });
 
+export const visitQuestionSchema = z.object({
+  id: z.string().min(1).max(64),
+  text: z.string().min(1).max(300),
+  done: z.boolean(),
+});
+
+export const visitSchema = z.object({
+  ...owned,
+  visitedOn: isoDate,
+  reason: z.string().min(1).max(160),
+  provider: z.string().max(120).optional(),
+  questions: z.array(visitQuestionSchema).max(50).default([]),
+  summary: z.string().max(4000).optional(),
+  followUpOn: isoDate.optional(),
+  reminderId: id.optional(),
+});
+
 const hm = z.string().regex(/^\d{2}:\d{2}$/);
 export const scheduleSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("once"), at: ts }),
@@ -136,6 +153,7 @@ export const dataSchema = z.object({
   sleeps: z.array(sleepSchema).default([]),
   medications: z.array(medicationSchema).default([]),
   vaccines: z.array(vaccineSchema).default([]),
+  visits: z.array(visitSchema).default([]),
   reminders: z.array(reminderSchema).default([]),
 });
 

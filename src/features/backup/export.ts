@@ -7,10 +7,10 @@ import { vaccineName } from "@/features/vaccines/labels";
 import { toCsv } from "./csv";
 import type { BackupFile } from "@/db/zod";
 
-export type CsvKind = "feedings" | "diapers" | "measurements" | "vaccines" | "sleeps" | "medications";
+export type CsvKind = "feedings" | "diapers" | "measurements" | "vaccines" | "sleeps" | "medications" | "visits";
 
 export async function buildBackup(): Promise<BackupFile> {
-  const [babies, feedings, diapers, measurements, sleeps, medications, vaccines, reminders] = await Promise.all([
+  const [babies, feedings, diapers, measurements, sleeps, medications, vaccines, visits, reminders] = await Promise.all([
     db.babies.toArray(),
     db.feedings.toArray(),
     db.diapers.toArray(),
@@ -18,6 +18,7 @@ export async function buildBackup(): Promise<BackupFile> {
     db.sleeps.toArray(),
     db.medications.toArray(),
     db.vaccines.toArray(),
+    db.visits.toArray(),
     db.reminders.toArray(),
   ]);
   const [locale, theme, volumeUnit, measureUnit, defaultIntervalMin, quietHours, dayStartHour] = await Promise.all([
@@ -42,6 +43,7 @@ export async function buildBackup(): Promise<BackupFile> {
       sleeps,
       medications,
       vaccines,
+      visits,
       // Push bookkeeping belongs to this device only.
       reminders: reminders.map((r) => {
         const copy = { ...r };
@@ -176,6 +178,28 @@ export async function buildCsv(kind: CsvKind): Promise<string> {
       "unit",
       "note",
     ]);
+  }
+
+  if (kind === "visits") {
+    const rows = (await db.visits.toArray())
+      .filter((v) => !v.deletedAt)
+      .sort((a, b) => a.visitedOn.localeCompare(b.visitedOn))
+      .map((v) => ({
+        id: v.id,
+        baby_id: v.babyId,
+        baby_name: name(v.babyId),
+        visited_on: v.visitedOn,
+        reason: v.reason,
+        provider: v.provider ?? "",
+        questions: v.questions.map((q) => `${q.done ? "[x]" : "[ ]"} ${q.text}`).join(" | "),
+        summary: v.summary ?? "",
+        follow_up_on: v.followUpOn ?? "",
+      }));
+    return toCsv(
+      ["id", "baby_id", "baby_name", "visited_on", "reason", "provider", "questions", "summary", "follow_up_on"],
+      rows,
+      ["baby_name", "reason", "provider", "questions", "summary"],
+    );
   }
 
   const rows = (await db.measurements.toArray())

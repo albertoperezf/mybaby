@@ -2,6 +2,7 @@ import Dexie, { type Table } from "dexie";
 import type {
   Baby,
   Diaper,
+  DoctorVisit,
   Feeding,
   Measurement,
   Medication,
@@ -19,6 +20,7 @@ export class AppDB extends Dexie {
   sleeps!: Table<Sleep, string>;
   medications!: Table<Medication, string>;
   vaccines!: Table<Vaccine, string>;
+  visits!: Table<DoctorVisit, string>;
   reminders!: Table<Reminder, string>;
   settings!: Table<SettingRow, string>;
 
@@ -36,6 +38,9 @@ export class AppDB extends Dexie {
       reminders: "id, babyId, nextFireAt, enabled",
       settings: "key",
     });
+    this.version(2).stores({
+      visits: "id, babyId, [babyId+visitedOn], updatedAt",
+    });
   }
 }
 
@@ -43,4 +48,4 @@ export class AppDB extends Dexie {
 export const db = new AppDB();
 
 /** Bump when the exported JSON shape changes. */
-export const EXPORT_SCHEMA_VERSION = 1;
+export const EXPORT_SCHEMA_VERSION = 2;
