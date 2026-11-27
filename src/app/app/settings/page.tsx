@@ -52,7 +52,7 @@ export default function SettingsPage() {
       import("@/features/backup/export"),
       import("@/features/backup/save-file"),
     ]);
-    await saveFile(backupFilename("csv", `mybaby-${kind}`), await buildCsv(kind), "text/csv");
+    await saveFile(backupFilename("csv", `mybabylog-${kind}`), await buildCsv(kind), "text/csv");
   }
 
   async function importFile(file: File) {

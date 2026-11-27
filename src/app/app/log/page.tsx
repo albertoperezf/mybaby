@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useApp } from "@/components/app-context";
 import { Button, Card, PageTitle, useToast } from "@/components/ui";
 import { EmptyState, MoonIllustration } from "@/components/illustrations";
+import { useHasOlderLogs } from "@/db/hooks";
 import { restore, softDelete } from "@/db/repo";
 import type { Diaper, Feeding, Medication, Sleep } from "@/db/types";
 import { rescheduleFeedingReminder } from "@/features/reminders/actions";
@@ -31,7 +32,8 @@ export default function LogPage() {
   const toast = useToast();
   const [days, setDays] = useState(14);
   const [editingMed, setEditingMed] = useState<Medication | undefined>();
-  const { feedings, diapers, sleeps, medications, summary, now } = useRecent(days);
+  const { feedings, diapers, sleeps, medications, summary, now, since } = useRecent(days);
+  const hasOlder = useHasOlderLogs(baby.id, since);
 
   const groups = useMemo(() => {
     if (!feedings || !diapers || !sleeps || !medications) return undefined;
@@ -197,7 +199,7 @@ export default function LogPage() {
         })}
       </div>
 
-      {groups && groups.length > 0 && (
+      {hasOlder && (
         <Button className="mt-5 w-full" onClick={() => setDays((d) => d + 14)}>
           {t("log.loadMore")}
         </Button>

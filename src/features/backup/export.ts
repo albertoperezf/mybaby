@@ -53,7 +53,7 @@ export async function buildBackup(): Promise<BackupFile> {
   };
 }
 
-export const backupFilename = (ext: "json" | "csv", stem = "mybaby-backup") =>
+export const backupFilename = (ext: "json" | "csv", stem = "mybabylog-backup") =>
   `${stem}-${new Date().toISOString().slice(0, 10)}.${ext}`;
 
 export async function backupJson(): Promise<string> {

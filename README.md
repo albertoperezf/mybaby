@@ -1,6 +1,6 @@
-# MyBaby
+# MyBabyLog
 
-A private, offline-first PWA for newborn care: feeding and diaper log, reminders, and growth tracking with WHO percentile curves. Built with Next.js (App Router) and deployed on Vercel.
+A private, offline-first PWA for newborn care: feeding and diaper log, reminders, and growth tracking with WHO percentile curves. Built with Next.js (App Router) and deployed on Vercel (`https://mybabylog.vercel.app`).
 
 **All data stays on the device** (IndexedDB via Dexie). No accounts, no database, no ads. The production CSP (`connect-src 'self'`) stops the app from contacting any other origin. The only telemetry is cookieless, anonymous Vercel Web Analytics and Speed Insights (page paths and performance timings, served from the site's own `/_vercel` path), disclosed on the privacy page. Enable both in the Vercel project (Analytics and Speed Insights tabs) after deploying.
 

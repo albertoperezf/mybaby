@@ -73,7 +73,7 @@ export default function RemindersPage() {
   async function exportIcs() {
     const { saveFile } = await import("@/features/backup/save-file");
     const ics = buildIcs(reminders ?? [], (r) => reminderTitle(r, babies, t));
-    await saveFile("mybaby-reminders.ics", ics, "text/calendar");
+    await saveFile("mybabylog-reminders.ics", ics, "text/calendar");
   }
 
   async function remove(r: Reminder) {

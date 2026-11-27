@@ -58,7 +58,7 @@ export default function MedicationsPage() {
   }
 
   async function exportCsv() {
-    await saveFile(backupFilename("csv", "mybaby-medications"), await buildCsv("medications"), "text/csv");
+    await saveFile(backupFilename("csv", "mybabylog-medications"), await buildCsv("medications"), "text/csv");
   }
 
   return (

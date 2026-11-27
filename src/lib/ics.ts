@@ -62,7 +62,7 @@ export function buildIcs(reminders: Reminder[], titleOf: (r: Reminder) => string
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//MyBaby//Reminders//EN",
+    "PRODID:-//MyBabyLog//Reminders//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     ...reminders.filter((r) => r.enabled && !r.deletedAt).flatMap((r) => events(r, titleOf(r), now).flat()),

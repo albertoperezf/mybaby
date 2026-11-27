@@ -63,7 +63,7 @@ export default function VaccinesPage() {
 
   async function exportCsv() {
     const [{ buildCsv, backupFilename }, { saveFile }] = await Promise.all([import("@/features/backup/export"), import("@/features/backup/save-file")]);
-    await saveFile(backupFilename("csv", "mybaby-vaccines"), await buildCsv("vaccines"), "text/csv");
+    await saveFile(backupFilename("csv", "mybabylog-vaccines"), await buildCsv("vaccines"), "text/csv");
   }
 
   const headline =

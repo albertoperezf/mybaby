@@ -138,6 +138,36 @@ export function useMedications(babyId: ID | null | undefined, since = 0): Medica
   );
 }
 
+/** True when at least one non-deleted log entry exists strictly before `before` (epoch ms). */
+export function useHasOlderLogs(babyId: ID | null | undefined, before: number): boolean | undefined {
+  return useLiveQuery(async () => {
+    if (!babyId || before <= 0) return false;
+    const [feed, diaper, sleep, med] = await Promise.all([
+      db.feedings
+        .where("[babyId+at]")
+        .between([babyId, 0], [babyId, before], true, false)
+        .filter((f) => !f.deletedAt)
+        .first(),
+      db.diapers
+        .where("[babyId+at]")
+        .between([babyId, 0], [babyId, before], true, false)
+        .filter((d) => !d.deletedAt)
+        .first(),
+      db.sleeps
+        .where("[babyId+startedAt]")
+        .between([babyId, 0], [babyId, before], true, false)
+        .filter((s) => !s.deletedAt && s.endedAt !== undefined && s.endedAt < before)
+        .first(),
+      db.medications
+        .where("[babyId+at]")
+        .between([babyId, 0], [babyId, before], true, false)
+        .filter((m) => !m.deletedAt)
+        .first(),
+    ]);
+    return Boolean(feed || diaper || sleep || med);
+  }, [babyId, before]);
+}
+
 export function useReminders(): Reminder[] | undefined {
   return useLiveQuery(async () => (await db.reminders.toArray()).filter((r) => !r.deletedAt), []);
 }

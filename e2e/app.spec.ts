@@ -362,9 +362,10 @@ test.describe("medications", () => {
     await page.getByRole("button", { name: /Give Vitamin D/ }).click();
     await expect(page.getByText("2 today")).toBeVisible();
 
-    // Appears in the chronological Log
+    // Appears in the chronological Log, without "Load 2 more weeks" since no older entries exist.
     await page.getByRole("link", { name: "Log", exact: true }).first().click();
     await expect(page.getByText("Vitamin D · 400 IU").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Load 2 more weeks" })).toHaveCount(0);
   });
 });
 
