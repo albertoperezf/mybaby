@@ -77,7 +77,7 @@ export function SectionTitle({ children }: { children: ReactNode }) {
 // ---- Form controls ---------------------------------------------------------
 
 export const inputClass =
-  "min-h-12 w-full rounded-xl border border-line bg-surface2 px-3 text-base text-fg placeholder:text-muted";
+  "min-h-12 w-full min-w-0 max-w-full rounded-xl border border-line bg-surface2 px-3 text-base text-fg placeholder:text-muted";
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: (id: string) => ReactNode }) {
   const id = useId();
@@ -157,17 +157,101 @@ interface SheetProps {
   children: ReactNode;
 }
 
+const INTERACTIVE = "button, a, input, select, textarea, label";
+
 export function Sheet({ open, onClose, title, children }: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const drag = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startTime: number;
+    dy: number;
+    dragging: boolean;
+    fromHandle: boolean;
+  } | null>(null);
   const titleId = useId();
   const t = useT();
 
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
+    dialog.style.transform = "";
+    dialog.style.transition = "";
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
   }, [open]);
+
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    const dialog = ref.current;
+    if (!dialog) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest(INTERACTIVE)) return;
+    const fromHandle = Boolean(target?.closest("[data-sheet-handle]"));
+    if (!fromHandle && dialog.scrollTop > 0) return;
+    drag.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startTime: Date.now(),
+      dy: 0,
+      dragging: false,
+      fromHandle,
+    };
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const state = drag.current;
+    const dialog = ref.current;
+    if (!state || !dialog || e.pointerId !== state.pointerId) return;
+    const dx = e.clientX - state.startX;
+    const dy = e.clientY - state.startY;
+    if (!state.dragging) {
+      if (dy < 6 || dy <= Math.abs(dx)) {
+        if (dy < -8) drag.current = null;
+        return;
+      }
+      if (!state.fromHandle && dialog.scrollTop > 0) {
+        drag.current = null;
+        return;
+      }
+      state.dragging = true;
+      dialog.style.transition = "none";
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    state.dy = Math.max(0, dy);
+    dialog.style.transform = `translateY(${state.dy}px)`;
+  }
+
+  function endDrag(e: React.PointerEvent<HTMLDivElement>, cancelled = false) {
+    const state = drag.current;
+    const dialog = ref.current;
+    if (!state || e.pointerId !== state.pointerId) return;
+    drag.current = null;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    if (!state.dragging || !dialog) return;
+
+    const elapsed = Math.max(1, Date.now() - state.startTime);
+    const velocity = state.dy / elapsed;
+    const shouldClose = !cancelled && (state.dy >= 90 || (state.dy >= 40 && velocity > 0.5));
+
+    if (shouldClose) {
+      dialog.style.transform = "";
+      dialog.style.transition = "";
+      onClose();
+    } else {
+      dialog.style.transition = "transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1)";
+      dialog.style.transform = "translateY(0)";
+      const clear = () => {
+        dialog.style.transition = "";
+        dialog.style.transform = "";
+      };
+      dialog.addEventListener("transitionend", clear, { once: true });
+    }
+  }
 
   return (
     <dialog
@@ -180,9 +264,18 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
       }}
     >
       {open && (
-        <div className="flex flex-col gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          <div aria-hidden className="mx-auto -mb-1 h-1.5 w-10 rounded-full bg-line md:hidden" />
-          <div className="flex items-center justify-between gap-3">
+        <div
+          className="flex flex-col gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={(e) => endDrag(e, false)}
+          onPointerCancel={(e) => endDrag(e, true)}
+        >
+          {/* Generous touch target around the visual drag handle for mobile swipe-to-close. */}
+          <div data-sheet-handle className="-mx-5 -mt-5 flex touch-none justify-center pb-2 pt-3 md:hidden">
+            <div aria-hidden className="h-1.5 w-11 rounded-full bg-line" />
+          </div>
+          <div data-sheet-handle className="flex touch-none items-center justify-between gap-3">
             <h2 id={titleId} className="text-xl font-bold">
               {title}
             </h2>

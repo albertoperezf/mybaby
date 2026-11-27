@@ -413,6 +413,22 @@ test.describe("doctor visits", () => {
     await qBox.click();
     await expect(qBox).toBeChecked();
     await expect(page.getByText("1 of 1 asked")).toBeVisible();
+
+    // Swiping down on the modal handle closes the sheet.
+    await page.getByRole("button", { name: "Add visit" }).first().click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    const box = await dialog.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      const startX = box.x + box.width / 2;
+      const startY = box.y + 18;
+      await page.mouse.move(startX, startY);
+      await page.mouse.down();
+      await page.mouse.move(startX, startY + 140, { steps: 8 });
+      await page.mouse.up();
+    }
+    await expect(dialog).toHaveCount(0);
   });
 });
 
