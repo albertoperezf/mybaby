@@ -1,4 +1,4 @@
-import type { Diaper, Feeding } from "@/db/types";
+import type { Diaper, Feeding, Sleep } from "@/db/types";
 import { MIN, addLogicalDays, dayKey, startOfLogicalDay } from "@/lib/time";
 
 export interface DaySummary {
@@ -23,6 +23,7 @@ export function summarizeDays(
   }
   const byKey = new Map(out.map((d) => [d.key, d]));
   for (const f of feedings) {
+    if (f.kind === "pump") continue;
     const d = byKey.get(dayKey(f.at, f.tz, opts.dayStartHour));
     if (!d) continue;
     d.feedings += 1;
@@ -37,7 +38,10 @@ export function summarizeDays(
 
 /** Mean gap between consecutive feedings, ignoring gaps longer than `maxGapMin` (e.g. a missed log). */
 export function averageIntervalMin(feedings: Feeding[], maxGapMin = 12 * 60): number | null {
-  const times = feedings.map((f) => f.at).sort((a, b) => a - b);
+  const times = feedings
+    .filter((f) => f.kind !== "pump")
+    .map((f) => f.at)
+    .sort((a, b) => a - b);
   const gaps: number[] = [];
   for (let i = 1; i < times.length; i++) {
     const gap = (times[i] - times[i - 1]) / MIN;
@@ -50,4 +54,21 @@ export function averageIntervalMin(feedings: Feeding[], maxGapMin = 12 * 60): nu
 export function averageDailyMl(days: DaySummary[]): number | null {
   const withData = days.filter((d) => d.ml > 0);
   return withData.length ? withData.reduce((a, d) => a + d.ml, 0) / withData.length : null;
+}
+
+/** Total sleep seconds and session count overlapping `[dayStart, now]`. */
+export function summarizeSleepToday(sleeps: Sleep[], dayStart: number, now: number): { totalSec: number; count: number } {
+  let totalMs = 0;
+  let count = 0;
+  for (const s of sleeps) {
+    const end = s.endedAt ?? now;
+    if (end <= dayStart || s.startedAt >= now) continue;
+    const clampedStart = Math.max(s.startedAt, dayStart);
+    const clampedEnd = Math.min(end, now);
+    if (clampedEnd > clampedStart) {
+      totalMs += clampedEnd - clampedStart;
+      count += 1;
+    }
+  }
+  return { totalSec: Math.round(totalMs / 1000), count };
 }

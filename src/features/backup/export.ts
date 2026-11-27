@@ -6,7 +6,7 @@ import { vaccineName } from "@/features/vaccines/labels";
 import { toCsv } from "./csv";
 import type { BackupFile } from "@/db/zod";
 
-export type CsvKind = "feedings" | "diapers" | "measurements" | "vaccines";
+export type CsvKind = "feedings" | "diapers" | "measurements" | "vaccines" | "sleeps";
 
 export async function buildBackup(): Promise<BackupFile> {
   const [babies, feedings, diapers, measurements, sleeps, medications, vaccines, reminders] = await Promise.all([
@@ -80,10 +80,12 @@ export async function buildCsv(kind: CsvKind): Promise<string> {
         amount_oz: f.amountMl !== undefined ? Math.round(mlToOz(f.amountMl) * 100) / 100 : "",
         entered_unit: f.enteredUnit ?? "",
         milk: f.milk ?? "",
+        side: f.side ?? "",
+        duration_sec: f.durationSec ?? "",
         note: f.note ?? "",
       }));
     return toCsv(
-      ["id", "baby_id", "baby_name", "time_iso", "tz", "kind", "amount_ml", "amount_oz", "entered_unit", "milk", "note"],
+      ["id", "baby_id", "baby_name", "time_iso", "tz", "kind", "amount_ml", "amount_oz", "entered_unit", "milk", "side", "duration_sec", "note"],
       rows,
       ["baby_name", "note"],
     );
@@ -133,6 +135,23 @@ export async function buildCsv(kind: CsvKind): Promise<string> {
       rows,
       ["baby_name", "name", "lot", "provider", "note"],
     );
+  }
+
+  if (kind === "sleeps") {
+    const rows = (await db.sleeps.toArray())
+      .filter((s) => !s.deletedAt)
+      .sort((a, b) => a.startedAt - b.startedAt)
+      .map((s) => ({
+        id: s.id,
+        baby_id: s.babyId,
+        baby_name: name(s.babyId),
+        started_iso: isoTime(s.startedAt),
+        ended_iso: s.endedAt !== undefined ? isoTime(s.endedAt) : "",
+        duration_min: s.endedAt !== undefined ? Math.round(((s.endedAt - s.startedAt) / 60_000) * 10) / 10 : "",
+        tz: s.tz,
+        note: s.note ?? "",
+      }));
+    return toCsv(["id", "baby_id", "baby_name", "started_iso", "ended_iso", "duration_min", "tz", "note"], rows, ["baby_name", "note"]);
   }
 
   const rows = (await db.measurements.toArray())

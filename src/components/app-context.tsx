@@ -9,7 +9,7 @@ export interface AppContextValue {
   /** Currently selected baby (always defined once onboarding is done). */
   baby: Baby;
   setActiveBaby: (id: ID) => void;
-  openQuickLog: (opts?: { tab?: "feed" | "diaper"; editFeedingId?: ID }) => void;
+  openQuickLog: (opts?: { tab?: "feed" | "diaper" | "sleep"; editFeedingId?: ID; editSleepId?: ID }) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);

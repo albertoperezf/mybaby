@@ -4,7 +4,7 @@ import Dexie from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo } from "react";
 import { db } from "./schema";
-import type { Baby, Diaper, Feeding, ID, Measurement, Reminder, Vaccine } from "./types";
+import type { Baby, Diaper, Feeding, ID, Measurement, Reminder, Sleep, Vaccine } from "./types";
 
 const FOREVER = Number.MAX_SAFE_INTEGER;
 
@@ -56,7 +56,7 @@ export function useLastFeeding(babyId: ID | null | undefined): Feeding | null | 
     const last = await db.feedings
       .where("[babyId+at]")
       .between([babyId, Dexie.minKey], [babyId, Dexie.maxKey])
-      .filter((f) => !f.deletedAt)
+      .filter((f) => !f.deletedAt && f.kind !== "pump")
       .last();
     return last ?? null;
   }, [babyId]);
@@ -69,9 +69,37 @@ export function useLastAmount(babyId: ID | null | undefined): { amountMl: number
     const last = await db.feedings
       .where("[babyId+at]")
       .between([babyId, Dexie.minKey], [babyId, Dexie.maxKey])
-      .filter((f) => !f.deletedAt && f.amountMl !== undefined)
+      .filter((f) => !f.deletedAt && f.kind === "bottle" && f.amountMl !== undefined)
       .last();
     return last?.amountMl !== undefined ? { amountMl: last.amountMl } : null;
+  }, [babyId]);
+}
+
+export function useSleeps(babyId: ID | null | undefined, since = 0): Sleep[] | undefined {
+  return useLiveQuery(
+    async () => {
+      if (!babyId) return [];
+      const rows = await db.sleeps
+        .where("[babyId+startedAt]")
+        .between([babyId, Math.max(0, since - 24 * 60 * 60 * 1000)], [babyId, FOREVER])
+        .filter((s) => !s.deletedAt && (s.endedAt === undefined || s.endedAt >= since || s.startedAt >= since))
+        .toArray();
+      return rows.reverse();
+    },
+    [babyId, since],
+  );
+}
+
+export function useActiveSleep(babyId: ID | null | undefined): Sleep | null | undefined {
+  return useLiveQuery(async () => {
+    if (!babyId) return null;
+    const rows = await db.sleeps
+      .where("babyId")
+      .equals(babyId)
+      .filter((s) => !s.deletedAt && s.endedAt === undefined)
+      .toArray();
+    rows.sort((a, b) => b.startedAt - a.startedAt);
+    return rows[0] ?? null;
   }, [babyId]);
 }
 
@@ -100,7 +128,10 @@ export function useReminders(): Reminder[] | undefined {
 
 /** Counts of records, used for backup nudges. */
 export function useEntryCount(): number | undefined {
-  return useLiveQuery(async () => (await db.feedings.count()) + (await db.diapers.count()) + (await db.measurements.count()), []);
+  return useLiveQuery(
+    async () => (await db.feedings.count()) + (await db.diapers.count()) + (await db.measurements.count()) + (await db.sleeps.count()),
+    [],
+  );
 }
 
 export function useActiveBaby(babies: Baby[] | undefined, activeId: ID | null | undefined): Baby | undefined {

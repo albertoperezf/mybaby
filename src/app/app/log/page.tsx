@@ -1,21 +1,25 @@
 "use client";
 
-import { Droplets, Milk, Pencil, Trash2 } from "lucide-react";
+import { Droplet, Droplets, Heart, Milk, Moon, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/app-context";
 import { Button, Card, PageTitle, useToast } from "@/components/ui";
 import { EmptyState, MoonIllustration } from "@/components/illustrations";
 import { restore, softDelete } from "@/db/repo";
-import type { Diaper, Feeding } from "@/db/types";
+import type { Diaper, Feeding, Sleep } from "@/db/types";
 import { rescheduleFeedingReminder } from "@/features/reminders/actions";
 import { DailyTotalsChart } from "@/features/feeding/daily-chart";
 import { StatTiles } from "@/features/feeding/stat-tiles";
 import { useRecent } from "@/features/feeding/use-recent";
+import { formatDurationShort } from "@/features/timers/timer-store";
 import { useLocale, useT, type MessageKey } from "@/i18n";
 import { dayKey, formatClock, formatDayHeading } from "@/lib/time";
 import { formatVolume } from "@/lib/units";
 
-type Entry = { kind: "feed"; row: Feeding } | { kind: "diaper"; row: Diaper };
+type Entry =
+  | { kind: "feed"; at: number; tz: string; row: Feeding }
+  | { kind: "diaper"; at: number; tz: string; row: Diaper }
+  | { kind: "sleep"; at: number; tz: string; row: Sleep };
 
 export default function LogPage() {
   const { baby, settings, openQuickLog } = useApp();
@@ -23,34 +27,52 @@ export default function LogPage() {
   const locale = useLocale();
   const toast = useToast();
   const [days, setDays] = useState(14);
-  const { feedings, diapers, summary, now } = useRecent(days);
+  const { feedings, diapers, sleeps, summary, now } = useRecent(days);
 
   const groups = useMemo(() => {
-    if (!feedings || !diapers) return undefined;
+    if (!feedings || !diapers || !sleeps) return undefined;
     const entries: Entry[] = [
-      ...feedings.map((row) => ({ kind: "feed" as const, row })),
-      ...diapers.map((row) => ({ kind: "diaper" as const, row })),
-    ].sort((a, b) => b.row.at - a.row.at);
+      ...feedings.map((row) => ({ kind: "feed" as const, at: row.at, tz: row.tz, row })),
+      ...diapers.map((row) => ({ kind: "diaper" as const, at: row.at, tz: row.tz, row })),
+      ...sleeps.map((row) => ({ kind: "sleep" as const, at: row.startedAt, tz: row.tz, row })),
+    ].sort((a, b) => b.at - a.at);
     const map = new Map<string, Entry[]>();
     for (const e of entries) {
-      const key = dayKey(e.row.at, e.row.tz, settings.dayStartHour);
+      const key = dayKey(e.at, e.tz, settings.dayStartHour);
       map.set(key, [...(map.get(key) ?? []), e]);
     }
     return [...map.entries()];
-  }, [feedings, diapers, settings.dayStartHour]);
+  }, [feedings, diapers, sleeps, settings.dayStartHour]);
 
   async function remove(e: Entry) {
-    const table = e.kind === "feed" ? "feedings" : "diapers";
+    const table = e.kind === "feed" ? "feedings" : e.kind === "diaper" ? "diapers" : "sleeps";
     await softDelete(table, [e.row.id]);
-    if (e.kind === "feed") await rescheduleFeedingReminder(baby.id);
+    if (e.kind === "feed" && e.row.kind !== "pump") await rescheduleFeedingReminder(baby.id);
     toast.show({
       message: t("common.deleted"),
       actionLabel: t("common.undo"),
       onAction: async () => {
         await restore(table, [e.row.id]);
-        if (e.kind === "feed") await rescheduleFeedingReminder(baby.id);
+        if (e.kind === "feed" && e.row.kind !== "pump") await rescheduleFeedingReminder(baby.id);
       },
     });
+  }
+
+  function feedingTitle(f: Feeding) {
+    if (f.kind === "breast") {
+      const side = f.side ? ` (${t(`timer.sideShort.${f.side}` as MessageKey)})` : "";
+      const dur = f.durationSec ? ` · ${formatDurationShort(f.durationSec)}` : "";
+      return `${t("timer.breastLabel")}${side}${dur}`;
+    }
+    if (f.kind === "pump") {
+      const side = f.side ? ` (${t(`timer.sideShort.${f.side}` as MessageKey)})` : "";
+      const parts = [
+        f.amountMl !== undefined ? formatVolume(f.amountMl, f.enteredUnit ?? settings.volumeUnit) : "",
+        f.durationSec ? formatDurationShort(f.durationSec) : "",
+      ].filter(Boolean);
+      return `${t("timer.pumpLabel")}${side}${parts.length ? ` · ${parts.join(" · ")}` : ""}`;
+    }
+    return f.amountMl !== undefined ? formatVolume(f.amountMl, f.enteredUnit ?? settings.volumeUnit) : t("log.feeding");
   }
 
   const recent = summary?.slice(-8);
@@ -58,9 +80,9 @@ export default function LogPage() {
   return (
     <div>
       <PageTitle>{t("nav.log")}</PageTitle>
-      {recent && feedings && (
+      {recent && feedings && sleeps && (
         <div className="mb-4 grid gap-4 lg:grid-cols-2">
-          <StatTiles days={recent} feedings={feedings.filter((f) => f.at >= now - 7 * 86_400_000)} />
+          <StatTiles days={recent} feedings={feedings.filter((f) => f.at >= now - 7 * 86_400_000)} sleeps={sleeps} now={now} />
           <DailyTotalsChart days={recent.slice(-7)} />
         </div>
       )}
@@ -77,8 +99,8 @@ export default function LogPage() {
 
       <div className="flex flex-col gap-5">
         {groups?.map(([key, entries]) => {
-          const ml = entries.reduce((a, e) => a + (e.kind === "feed" ? (e.row.amountMl ?? 0) : 0), 0);
-          const count = entries.filter((e) => e.kind === "feed").length;
+          const ml = entries.reduce((a, e) => a + (e.kind === "feed" && e.row.kind !== "pump" ? (e.row.amountMl ?? 0) : 0), 0);
+          const count = entries.filter((e) => e.kind === "feed" && e.row.kind !== "pump").length;
           return (
             <section key={key} aria-labelledby={`day-${key}`}>
               <div className="mb-2 flex items-baseline justify-between">
@@ -91,47 +113,73 @@ export default function LogPage() {
                 </p>
               </div>
               <ul className="overflow-hidden rounded-[1.75rem] border border-line bg-surface shadow-soft">
-                {entries.map((e) => (
-                  <li key={e.row.id} className="flex items-center gap-3 border-b border-line p-3 last:border-b-0">
-                    <span className={`grid size-11 shrink-0 place-items-center rounded-full ${e.kind === "feed" ? "bg-feed-tint text-feed-ink" : "bg-diaper-tint text-diaper-ink"}`}>
-                      {e.kind === "feed" ? <Milk aria-hidden className="size-5" /> : <Droplets aria-hidden className="size-5" />}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold">
-                        {e.kind === "feed"
-                          ? e.row.amountMl !== undefined
-                            ? formatVolume(e.row.amountMl, e.row.enteredUnit ?? settings.volumeUnit)
-                            : t("log.feeding")
-                          : t(`diaper.${e.row.type}` as MessageKey)}
-                        <span className="ml-2 font-normal text-muted">{formatClock(e.row.at, locale)}</span>
-                      </p>
-                      {(e.row.note || (e.kind === "feed" && e.row.milk)) && (
-                        <p className="truncate text-sm text-muted">
-                          {e.kind === "feed" && e.row.milk ? `${t(`quick.${e.row.milk}` as MessageKey)}${e.row.note ? " · " : ""}` : ""}
-                          {e.row.note}
+                {entries.map((e) => {
+                  const iconStyle =
+                    e.kind === "sleep"
+                      ? "bg-sleep-tint text-sleep-ink"
+                      : e.kind === "diaper"
+                        ? "bg-diaper-tint text-diaper-ink"
+                        : e.row.kind === "pump"
+                          ? "bg-remind-tint text-remind-ink"
+                          : "bg-feed-tint text-feed-ink";
+                  return (
+                    <li key={e.row.id} className="flex items-center gap-3 border-b border-line p-3 last:border-b-0">
+                      <span className={`grid size-11 shrink-0 place-items-center rounded-full ${iconStyle}`}>
+                        {e.kind === "sleep" && <Moon aria-hidden className="size-5" />}
+                        {e.kind === "diaper" && <Droplets aria-hidden className="size-5" />}
+                        {e.kind === "feed" && e.row.kind === "breast" && <Heart aria-hidden className="size-5" />}
+                        {e.kind === "feed" && e.row.kind === "pump" && <Droplet aria-hidden className="size-5" />}
+                        {e.kind === "feed" && e.row.kind !== "breast" && e.row.kind !== "pump" && <Milk aria-hidden className="size-5" />}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold">
+                          {e.kind === "feed"
+                            ? feedingTitle(e.row)
+                            : e.kind === "diaper"
+                              ? t(`diaper.${e.row.type}` as MessageKey)
+                              : e.row.endedAt
+                                ? `${t("timer.sleepLabel")} · ${formatDurationShort((e.row.endedAt - e.row.startedAt) / 1000)}`
+                                : t("timer.activeSleep")}
+                          <span className="ml-2 font-normal text-muted">
+                            {e.kind === "sleep" && e.row.endedAt
+                              ? `${formatClock(e.row.startedAt, locale)} – ${formatClock(e.row.endedAt, locale)}`
+                              : formatClock(e.at, locale)}
+                          </span>
                         </p>
+                        {(e.row.note || (e.kind === "feed" && e.row.kind === "bottle" && e.row.milk)) && (
+                          <p className="truncate text-sm text-muted">
+                            {e.kind === "feed" && e.row.kind === "bottle" && e.row.milk
+                              ? `${t(`quick.${e.row.milk}` as MessageKey)}${e.row.note ? " · " : ""}`
+                              : ""}
+                            {e.row.note}
+                          </p>
+                        )}
+                      </div>
+                      {(e.kind === "feed" || e.kind === "sleep") && (
+                        <button
+                          type="button"
+                          aria-label={t("common.edit")}
+                          className="grid size-12 place-items-center rounded-full hover:bg-surface2"
+                          onClick={() =>
+                            e.kind === "feed"
+                              ? openQuickLog({ editFeedingId: e.row.id })
+                              : openQuickLog({ editSleepId: e.row.id })
+                          }
+                        >
+                          <Pencil aria-hidden className="size-5" />
+                        </button>
                       )}
-                    </div>
-                    {e.kind === "feed" && (
                       <button
                         type="button"
-                        aria-label={t("common.edit")}
+                        aria-label={t("common.delete")}
                         className="grid size-12 place-items-center rounded-full hover:bg-surface2"
-                        onClick={() => openQuickLog({ editFeedingId: e.row.id })}
+                        onClick={() => remove(e)}
                       >
-                        <Pencil aria-hidden className="size-5" />
+                        <Trash2 aria-hidden className="size-5" />
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      aria-label={t("common.delete")}
-                      className="grid size-12 place-items-center rounded-full hover:bg-surface2"
-                      onClick={() => remove(e)}
-                    >
-                      <Trash2 aria-hidden className="size-5" />
-                    </button>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           );

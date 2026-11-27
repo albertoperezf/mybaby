@@ -1,6 +1,6 @@
 "use client";
 
-import { Droplets, Milk, Plus } from "lucide-react";
+import { ChevronRight, Droplets, Milk, Plus, SlidersHorizontal } from "lucide-react";
 import { useApp } from "@/components/app-context";
 import { Button, SectionTitle } from "@/components/ui";
 import { useLastAmount } from "@/db/hooks";
@@ -75,8 +75,16 @@ export function QuickActions() {
         </div>
       </section>
 
-      <Button variant="ghost" onClick={() => openQuickLog({ tab: "feed" })}>
-        {t("home.moreOptions")}
+      <Button
+        variant="secondary"
+        className="w-full justify-between rounded-2xl px-4 shadow-soft"
+        onClick={() => openQuickLog({ tab: "feed" })}
+      >
+        <span className="inline-flex items-center gap-2.5">
+          <SlidersHorizontal aria-hidden className="size-4 text-primary" />
+          {t("home.moreOptions")}
+        </span>
+        <ChevronRight aria-hidden className="size-5 text-muted" />
       </Button>
     </div>
   );

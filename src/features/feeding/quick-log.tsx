@@ -1,15 +1,15 @@
 "use client";
 
 import clsx from "clsx";
-import { Droplets, Milk } from "lucide-react";
+import { ChevronDown, ChevronUp, Droplets, Milk } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useApp } from "@/components/app-context";
 import { Button, Field, Segmented, Sheet, inputClass } from "@/components/ui";
 import { db } from "@/db/schema";
 import { useLastAmount } from "@/db/hooks";
-import { updateFeeding } from "@/db/repo";
-import type { DiaperType, Feeding, ID, MilkType } from "@/db/types";
+import { updateFeeding, updateSleep } from "@/db/repo";
+import type { DiaperType, Feeding, ID, MilkType, Sleep } from "@/db/types";
 import { rescheduleFeedingReminder } from "@/features/reminders/actions";
 import { useLogging } from "./use-logging";
 import { useT, type MessageKey } from "@/i18n";
@@ -108,30 +108,53 @@ function BabyChips({ selected, onChange }: { selected: ID[]; onChange: (ids: ID[
 interface Props {
   open: boolean;
   onClose: () => void;
-  initialTab: "feed" | "diaper";
+  initialTab: "feed" | "diaper" | "sleep";
   editFeedingId?: ID;
+  editSleepId?: ID;
 }
 
-function QuickLogForm({ onClose, initialTab, editing: feeding }: { onClose: () => void; initialTab: "feed" | "diaper"; editing?: Feeding }) {
+function QuickLogForm({
+  onClose,
+  initialTab,
+  editing: feeding,
+  editingSleep: sleep,
+}: {
+  onClose: () => void;
+  initialTab: "feed" | "diaper" | "sleep";
+  editing?: Feeding;
+  editingSleep?: Sleep;
+}) {
   const t = useT();
   const { baby, settings } = useApp();
-  const { logFeeding: addFeeding, logDiaper: addDiaper } = useLogging();
+  const { logFeeding: addFeeding, logDiaper: addDiaper, logSleep: addSleep } = useLogging();
   const unit = settings.volumeUnit;
   const last = useLastAmount(baby.id);
   const editFeedingId = feeding?.id;
+  const editSleepId = sleep?.id;
   const editUnit = feeding?.enteredUnit ?? unit;
 
-  // The sheet unmounts this form when closed, so state starts fresh from `feeding` on every open.
-  const [tab, setTab] = useState<"feed" | "diaper">(initialTab);
+  // The sheet unmounts this form when closed, so state starts fresh from `feeding` / `sleep` on every open.
+  const [tab, setTab] = useState<"feed" | "diaper" | "sleep">(sleep ? "sleep" : initialTab);
+  const [feedKind, setFeedKind] = useState<"bottle" | "breast" | "pump">(
+    feeding?.kind === "breast" || feeding?.kind === "pump" ? feeding.kind : "bottle",
+  );
   const [when, setWhen] = useState<When>(feeding ? { custom: toLocalInput(feeding.at) } : { offsetMin: 0 });
   const [targets, setTargets] = useState<ID[]>([baby.id]);
   const [amount, setAmount] = useState(feeding?.amountMl !== undefined ? String(volumeNumber(feeding.amountMl, editUnit)) : "");
   const [formUnit, setFormUnit] = useState<"oz" | "ml">(editUnit);
   const [milk, setMilk] = useState<MilkType | "">(feeding?.milk ?? "");
-  const [note, setNote] = useState(feeding?.note ?? "");
+  const [side, setSide] = useState<"left" | "right" | "both">(feeding?.side ?? "both");
+  const [durationMin, setDurationMin] = useState(
+    feeding?.durationSec ? String(Math.max(1, Math.round(feeding.durationSec / 60))) : "15",
+  );
+  const [note, setNote] = useState(feeding?.note ?? sleep?.note ?? "");
   const [showMore, setShowMore] = useState(Boolean(feeding));
 
-  const editing = Boolean(feeding);
+  const [sleepStart, setSleepStart] = useState(() => toLocalInput(sleep?.startedAt ?? Date.now() - 30 * MIN));
+  const [sleepEnd, setSleepEnd] = useState(() => toLocalInput(sleep?.endedAt ?? Date.now()));
+  const [sleepError, setSleepError] = useState("");
+
+  const editing = Boolean(feeding || sleep);
 
   const presets = useMemo(() => {
     const base: { label: string; value: number; ml: number }[] = PRESETS[unit].map((v) => ({
@@ -149,12 +172,21 @@ function QuickLogForm({ onClose, initialTab, editing: feeding }: { onClose: () =
 
   async function logFeeding(ml: number | undefined, enteredUnit: "oz" | "ml") {
     const at = resolveAt(when);
+    const parsedDur = Number(durationMin.replace(",", "."));
+    const durationSec =
+      feedKind !== "bottle" && Number.isFinite(parsedDur) && parsedDur > 0 ? Math.round(parsedDur * 60) : undefined;
+    const resolvedMilk = feedKind === "bottle" ? milk || undefined : "breastmilk";
+    const resolvedSide = feedKind === "bottle" ? undefined : side;
+
     if (editFeedingId) {
       await updateFeeding(editFeedingId, {
         at,
-        amountMl: ml,
-        enteredUnit,
-        milk: milk || undefined,
+        kind: feedKind,
+        amountMl: feedKind === "breast" ? undefined : ml,
+        enteredUnit: feedKind === "breast" ? undefined : enteredUnit,
+        milk: resolvedMilk,
+        side: resolvedSide,
+        durationSec,
         note: note.trim() || undefined,
       });
       await rescheduleFeedingReminder(baby.id);
@@ -164,9 +196,12 @@ function QuickLogForm({ onClose, initialTab, editing: feeding }: { onClose: () =
     onClose();
     await addFeeding(targets, {
       at,
-      amountMl: ml,
-      enteredUnit,
-      milk: milk || undefined,
+      kind: feedKind,
+      amountMl: feedKind === "breast" ? undefined : ml,
+      enteredUnit: feedKind === "breast" ? undefined : enteredUnit,
+      milk: resolvedMilk,
+      side: resolvedSide,
+      durationSec,
       note: note.trim() || undefined,
     });
   }
@@ -176,8 +211,27 @@ function QuickLogForm({ onClose, initialTab, editing: feeding }: { onClose: () =
     await addDiaper(targets, type, resolveAt(when), note.trim() || undefined);
   }
 
+  async function saveSleep() {
+    const startedAt = fromLocalInput(sleepStart);
+    const endedAt = fromLocalInput(sleepEnd);
+    if (!startedAt || !endedAt || endedAt <= startedAt) {
+      setSleepError(t("timer.sleepInvalid"));
+      return;
+    }
+    setSleepError("");
+    if (editSleepId) {
+      await updateSleep(editSleepId, { startedAt, endedAt, note: note.trim() || undefined });
+      onClose();
+      return;
+    }
+    onClose();
+    await addSleep(targets, { startedAt, endedAt, note: note.trim() || undefined });
+  }
+
   const parsedAmount = Number(amount.replace(",", "."));
   const hasAmount = amount.trim() !== "" && Number.isFinite(parsedAmount) && parsedAmount > 0;
+  const parsedDur = Number(durationMin.replace(",", "."));
+  const hasDur = durationMin.trim() !== "" && Number.isFinite(parsedDur) && parsedDur > 0;
 
   return (
     <>
@@ -189,102 +243,181 @@ function QuickLogForm({ onClose, initialTab, editing: feeding }: { onClose: () =
           options={[
             { value: "feed", label: t("quick.feed") },
             { value: "diaper", label: t("quick.diaper") },
+            { value: "sleep", label: t("quick.sleep") },
           ]}
         />
       )}
 
-      <BabyChips selected={targets} onChange={setTargets} />
+      {!editing && <BabyChips selected={targets} onChange={setTargets} />}
 
       {tab === "feed" ? (
         <>
-          {!editing && (
-            <div>
-              <p className="mb-2 text-sm font-medium">{t("quick.tapToLog")}</p>
-              <div className="grid grid-cols-4 gap-2">
-                {presets.map((p, i) => (
-                  <Button
-                    key={i}
-                    variant={i === 3 && last ? "primary" : "secondary"}
-                    size="lg"
-                    className="flex-col !px-1 !text-base leading-tight"
-                    onClick={() => logFeeding(p.ml, unit)}
-                  >
-                    <Milk aria-hidden className="size-5" />
-                    <span>{p.label}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
+          <Segmented
+            label={t("quick.feedKind")}
+            value={feedKind}
+            onChange={setFeedKind}
+            options={[
+              { value: "bottle", label: t("timer.bottle") },
+              { value: "breast", label: t("timer.breast") },
+              { value: "pump", label: t("timer.pump") },
+            ]}
+          />
 
-          <Field label={editing ? t("quick.amount") : t("quick.otherAmount")}>
-            {(id) => (
-              <div className="flex gap-2">
-                <input
-                  id={id}
-                  inputMode="decimal"
-                  className={inputClass}
-                  value={amount}
-                  placeholder={formUnit === "oz" ? "3.5" : "100"}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-                <Segmented
-                  label={t("settings.volumeUnit")}
-                  value={formUnit}
-                  onChange={setFormUnit}
-                  options={[
-                    { value: "oz", label: "oz" },
-                    { value: "ml", label: "ml" },
-                  ]}
-                  className="w-32 shrink-0"
-                />
-              </div>
-            )}
-          </Field>
+          {feedKind === "bottle" ? (
+            <>
+              {!editing && (
+                <div>
+                  <p className="mb-2 text-sm font-medium">{t("quick.tapToLog")}</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {presets.map((p, i) => (
+                      <Button
+                        key={i}
+                        variant={i === 3 && last ? "primary" : "secondary"}
+                        size="lg"
+                        className="flex-col !px-1 !text-base leading-tight"
+                        onClick={() => logFeeding(p.ml, unit)}
+                      >
+                        <Milk aria-hidden className="size-5" />
+                        <span>{p.label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-          <WhenPicker value={when} onChange={setWhen} />
+              <Field label={editing ? t("quick.amount") : t("quick.otherAmount")}>
+                {(id) => (
+                  <div className="flex gap-2">
+                    <input
+                      id={id}
+                      inputMode="decimal"
+                      className={inputClass}
+                      value={amount}
+                      placeholder={formUnit === "oz" ? "3.5" : "100"}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                    <Segmented
+                      label={t("settings.volumeUnit")}
+                      value={formUnit}
+                      onChange={setFormUnit}
+                      options={[
+                        { value: "oz", label: "oz" },
+                        { value: "ml", label: "ml" },
+                      ]}
+                      className="w-32 shrink-0"
+                    />
+                  </div>
+                )}
+              </Field>
 
-          <button
-            type="button"
-            className="min-h-11 self-start text-sm font-medium text-primary underline"
-            aria-expanded={showMore}
-            onClick={() => setShowMore((v) => !v)}
-          >
-            {t("quick.moreOptions")}
-          </button>
-          {showMore && (
-            <div className="flex flex-col gap-3">
+              <WhenPicker value={when} onChange={setWhen} />
+
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center gap-2 self-start rounded-xl border border-line bg-surface2 px-3.5 text-sm font-semibold text-fg transition active:scale-[0.98]"
+                aria-expanded={showMore}
+                onClick={() => setShowMore((v) => !v)}
+              >
+                {t("quick.moreOptions")}
+                {showMore ? <ChevronUp aria-hidden className="size-4 text-muted" /> : <ChevronDown aria-hidden className="size-4 text-muted" />}
+              </button>
+              {showMore && (
+                <div className="flex flex-col gap-3">
+                  <Segmented
+                    label={t("quick.milkType")}
+                    value={milk}
+                    onChange={(v) => setMilk(v === milk ? "" : v)}
+                    options={[
+                      { value: "formula", label: t("quick.formula") },
+                      { value: "breastmilk", label: t("quick.breastmilk") },
+                      { value: "mixed", label: t("quick.mixed") },
+                    ]}
+                  />
+                  <Field label={t("common.note")}>
+                    {(id) => <input id={id} className={inputClass} value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />}
+                  </Field>
+                </div>
+              )}
+
+              <Button
+                variant="primary"
+                size="lg"
+                disabled={editing ? false : !hasAmount}
+                onClick={() => logFeeding(hasAmount ? toMl(parsedAmount, formUnit) : undefined, formUnit)}
+              >
+                {editing ? t("common.save") : t("quick.logFeeding")}
+              </Button>
+              {!editing && !hasAmount && (
+                <Button variant="secondary" onClick={() => logFeeding(undefined, unit)}>
+                  {t("quick.logNoAmount")}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
               <Segmented
-                label={t("quick.milkType")}
-                value={milk}
-                onChange={(v) => setMilk(v === milk ? "" : v)}
+                label={t("timer.side")}
+                value={side}
+                onChange={setSide}
                 options={[
-                  { value: "formula", label: t("quick.formula") },
-                  { value: "breastmilk", label: t("quick.breastmilk") },
-                  { value: "mixed", label: t("quick.mixed") },
+                  { value: "left", label: t("timer.left") },
+                  { value: "right", label: t("timer.right") },
+                  { value: "both", label: t("timer.both") },
                 ]}
               />
+              <Field label={t("timer.durationMin")}>
+                {(id) => (
+                  <input
+                    id={id}
+                    inputMode="decimal"
+                    className={inputClass}
+                    value={durationMin}
+                    onChange={(e) => setDurationMin(e.target.value)}
+                  />
+                )}
+              </Field>
+              {feedKind === "pump" && (
+                <Field label={t("timer.pumpAmount")}>
+                  {(id) => (
+                    <div className="flex gap-2">
+                      <input
+                        id={id}
+                        inputMode="decimal"
+                        className={inputClass}
+                        value={amount}
+                        placeholder={formUnit === "oz" ? "3.5" : "100"}
+                        onChange={(e) => setAmount(e.target.value)}
+                      />
+                      <Segmented
+                        label={t("settings.volumeUnit")}
+                        value={formUnit}
+                        onChange={setFormUnit}
+                        options={[
+                          { value: "oz", label: "oz" },
+                          { value: "ml", label: "ml" },
+                        ]}
+                        className="w-32 shrink-0"
+                      />
+                    </div>
+                  )}
+                </Field>
+              )}
+              <WhenPicker value={when} onChange={setWhen} />
               <Field label={t("common.note")}>
                 {(id) => <input id={id} className={inputClass} value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />}
               </Field>
-            </div>
-          )}
-
-          <Button
-            variant="primary"
-            size="lg"
-            disabled={editing ? false : !hasAmount}
-            onClick={() => logFeeding(hasAmount ? toMl(parsedAmount, formUnit) : undefined, formUnit)}
-          >
-            {editing ? t("common.save") : t("quick.logFeeding")}
-          </Button>
-          {!editing && !hasAmount && (
-            <Button variant="ghost" onClick={() => logFeeding(undefined, unit)}>
-              {t("quick.logNoAmount")}
-            </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                disabled={!hasDur && !(feedKind === "pump" && hasAmount)}
+                onClick={() => logFeeding(hasAmount ? toMl(parsedAmount, formUnit) : undefined, formUnit)}
+              >
+                {editing ? t("common.save") : t("common.save")}
+              </Button>
+            </>
           )}
         </>
-      ) : (
+      ) : tab === "diaper" ? (
         <>
           <div>
             <p className="mb-2 text-sm font-medium">{t("quick.tapToLog")}</p>
@@ -302,24 +435,63 @@ function QuickLogForm({ onClose, initialTab, editing: feeding }: { onClose: () =
             {(id) => <input id={id} className={inputClass} value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />}
           </Field>
         </>
+      ) : (
+        <>
+          <Field label={t("timer.sleepStart")}>
+            {(id) => (
+              <input
+                id={id}
+                type="datetime-local"
+                className={inputClass}
+                value={sleepStart}
+                onChange={(e) => setSleepStart(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={t("timer.sleepEnd")}>
+            {(id) => (
+              <input
+                id={id}
+                type="datetime-local"
+                className={inputClass}
+                value={sleepEnd}
+                onChange={(e) => setSleepEnd(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={t("common.note")}>
+            {(id) => <input id={id} className={inputClass} value={note} maxLength={280} onChange={(e) => setNote(e.target.value)} />}
+          </Field>
+          {sleepError && <p className="text-sm font-semibold text-danger">{sleepError}</p>}
+          <Button variant="primary" size="lg" onClick={saveSleep}>
+            {editing ? t("common.save") : t("timer.logSleep")}
+          </Button>
+        </>
       )}
     </>
   );
 }
 
-export function QuickLogSheet({ open, onClose, initialTab, editFeedingId }: Props) {
+export function QuickLogSheet({ open, onClose, initialTab, editFeedingId, editSleepId }: Props) {
   const t = useT();
+  const title = editFeedingId
+    ? t("quick.editFeeding")
+    : editSleepId
+      ? t("timer.editSleep")
+      : t("quick.title");
   return (
-    <Sheet open={open} onClose={onClose} title={editFeedingId ? t("quick.editFeeding") : t("quick.title")}>
-      <QuickLogLoader onClose={onClose} initialTab={initialTab} editFeedingId={editFeedingId} />
+    <Sheet open={open} onClose={onClose} title={title}>
+      <QuickLogLoader onClose={onClose} initialTab={initialTab} editFeedingId={editFeedingId} editSleepId={editSleepId} />
     </Sheet>
   );
 }
 
-/** For edits, waits for the feeding to load so the form can start with the right values. */
-function QuickLogLoader({ onClose, initialTab, editFeedingId }: Omit<Props, "open">) {
+/** For edits, waits for the feeding or sleep to load so the form can start with the right values. */
+function QuickLogLoader({ onClose, initialTab, editFeedingId, editSleepId }: Omit<Props, "open">) {
   const feeding = useLiveQuery(async () => (editFeedingId ? ((await db.feedings.get(editFeedingId)) ?? null) : null), [editFeedingId]);
+  const sleep = useLiveQuery(async () => (editSleepId ? ((await db.sleeps.get(editSleepId)) ?? null) : null), [editSleepId]);
   if (editFeedingId && !feeding) return null;
-  return <QuickLogForm onClose={onClose} initialTab={initialTab} editing={feeding ?? undefined} />;
+  if (editSleepId && !sleep) return null;
+  return <QuickLogForm onClose={onClose} initialTab={initialTab} editing={feeding ?? undefined} editingSleep={sleep ?? undefined} />;
 }
 

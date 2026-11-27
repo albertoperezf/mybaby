@@ -1,25 +1,41 @@
 "use client";
 
 import clsx from "clsx";
-import { Droplets, Milk, Timer } from "lucide-react";
+import { Droplets, Milk, Moon, Timer } from "lucide-react";
 import { useApp } from "@/components/app-context";
 import { Card } from "@/components/ui";
-import type { Feeding } from "@/db/types";
+import type { Feeding, Sleep } from "@/db/types";
+import { formatDurationShort } from "@/features/timers/timer-store";
 import { useT, type MessageKey } from "@/i18n";
 import { MIN, formatElapsed } from "@/lib/time";
 import { formatVolume } from "@/lib/units";
-import { averageDailyMl, averageIntervalMin, type DaySummary } from "./stats";
+import { averageDailyMl, averageIntervalMin, summarizeSleepToday, type DaySummary } from "./stats";
 
-type Tone = "feed" | "diaper";
+type Tone = "feed" | "diaper" | "sleep";
 
 const TONES: Record<Tone, string> = {
   feed: "bg-feed-tint text-feed-ink",
   diaper: "bg-diaper-tint text-diaper-ink",
+  sleep: "bg-sleep-tint text-sleep-ink",
 };
 
-function Tile({ label, value, sub, tone, icon }: { label: string; value: string; sub?: string; tone: Tone; icon: React.ReactNode }) {
+function Tile({
+  label,
+  value,
+  sub,
+  tone,
+  icon,
+  className,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone: Tone;
+  icon: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={clsx("flex flex-col gap-0.5 rounded-3xl p-3.5", TONES[tone])}>
+    <div className={clsx("flex flex-col gap-0.5 rounded-3xl p-3.5", TONES[tone], className)}>
       <span className="flex items-center gap-1.5 text-xs font-bold opacity-90">
         {icon}
         {label}
@@ -30,7 +46,17 @@ function Tile({ label, value, sub, tone, icon }: { label: string; value: string;
   );
 }
 
-export function StatTiles({ days, feedings }: { days: DaySummary[]; feedings: Feeding[] }) {
+export function StatTiles({
+  days,
+  feedings,
+  sleeps,
+  now,
+}: {
+  days: DaySummary[];
+  feedings: Feeding[];
+  sleeps?: Sleep[];
+  now?: number;
+}) {
   const { settings, baby } = useApp();
   const t = useT();
   const unit = settings.volumeUnit;
@@ -39,6 +65,7 @@ export function StatTiles({ days, feedings }: { days: DaySummary[]; feedings: Fe
   const priorAvg = averageDailyMl(prior);
   const interval = averageIntervalMin(feedings);
   const delta = priorAvg && today.ml > 0 ? Math.round(((today.ml - priorAvg) / priorAvg) * 100) : null;
+  const sleepToday = sleeps && now !== undefined ? summarizeSleepToday(sleeps, today.start, now) : null;
 
   const encouragement: MessageKey =
     today.feedings === 0 ? "home.cheer.none" : today.feedings < 4 ? "home.cheer.few" : "home.cheer.many";
@@ -63,6 +90,22 @@ export function StatTiles({ days, feedings }: { days: DaySummary[]; feedings: Fe
           sub={t("stats.last7days")}
         />
         <Tile tone="diaper" icon={<Droplets aria-hidden className="size-3.5" />} label={t("stats.diapers")} value={String(today.diapers)} />
+        {sleepToday && (
+          <Tile
+            className="col-span-2"
+            tone="sleep"
+            icon={<Moon aria-hidden className="size-3.5" />}
+            label={t("stats.sleepToday")}
+            value={sleepToday.totalSec > 0 ? formatDurationShort(sleepToday.totalSec) : "-"}
+            sub={
+              sleepToday.count > 0
+                ? sleepToday.count === 1
+                  ? t("stats.oneNap")
+                  : t("stats.naps", { n: sleepToday.count })
+                : undefined
+            }
+          />
+        )}
       </div>
     </Card>
   );

@@ -2,13 +2,14 @@
 
 import { useCallback } from "react";
 import { useToast } from "@/components/ui";
-import { addDiapers, addFeedings, softDelete, type FeedingInput } from "@/db/repo";
+import { addDiapers, addFeedings, addSleeps, softDelete, type FeedingInput } from "@/db/repo";
 import type { DiaperType, ID } from "@/db/types";
 import { rescheduleFeedingReminder } from "@/features/reminders/actions";
+import { formatDurationShort } from "@/features/timers/timer-store";
 import { useT, type MessageKey } from "@/i18n";
 import { formatVolume } from "@/lib/units";
 
-/** Shared by the home presets and the quick-log sheet: write, reschedule, toast with undo. */
+/** Shared by the home presets, timers and quick-log sheet: write, reschedule, toast with undo. */
 export function useLogging() {
   const t = useT();
   const toast = useToast();
@@ -16,16 +17,21 @@ export function useLogging() {
   const logFeeding = useCallback(
     async (babyIds: ID[], input: FeedingInput) => {
       const rows = await addFeedings(babyIds, input);
-      await Promise.all(babyIds.map((id) => rescheduleFeedingReminder(id)));
-      toast.show({
-        message:
-          input.amountMl !== undefined
+      const isPump = input.kind === "pump";
+      if (!isPump) await Promise.all(babyIds.map((id) => rescheduleFeedingReminder(id)));
+      const message = isPump
+        ? t("timer.loggedPump")
+        : input.kind === "breast"
+          ? t("timer.loggedBreast", { duration: formatDurationShort(input.durationSec ?? 0) })
+          : input.amountMl !== undefined
             ? t("quick.loggedFeed", { amount: formatVolume(input.amountMl, input.enteredUnit ?? "oz") })
-            : t("quick.loggedFeedNoAmount"),
+            : t("quick.loggedFeedNoAmount");
+      toast.show({
+        message,
         actionLabel: t("common.undo"),
         onAction: async () => {
           await softDelete("feedings", rows.map((r) => r.id));
-          await Promise.all(babyIds.map((id) => rescheduleFeedingReminder(id)));
+          if (!isPump) await Promise.all(babyIds.map((id) => rescheduleFeedingReminder(id)));
         },
       });
     },
@@ -44,5 +50,18 @@ export function useLogging() {
     [t, toast],
   );
 
-  return { logFeeding, logDiaper };
+  const logSleep = useCallback(
+    async (babyIds: ID[], input: { startedAt: number; endedAt?: number; note?: string }) => {
+      const rows = await addSleeps(babyIds, input);
+      const dur = input.endedAt ? formatDurationShort((input.endedAt - input.startedAt) / 1000) : "";
+      toast.show({
+        message: dur ? t("timer.loggedSleep", { duration: dur }) : t("timer.sleepStarted"),
+        actionLabel: t("common.undo"),
+        onAction: () => softDelete("sleeps", rows.map((r) => r.id)),
+      });
+    },
+    [t, toast],
+  );
+
+  return { logFeeding, logDiaper, logSleep };
 }

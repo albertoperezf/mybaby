@@ -18,7 +18,7 @@ import { useT } from "@/i18n";
 
 // ---- Button ----------------------------------------------------------------
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "feed" | "diaper";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "feed" | "diaper" | "sleep";
 type Size = "md" | "lg";
 
 const variants: Record<Variant, string> = {
@@ -28,6 +28,7 @@ const variants: Record<Variant, string> = {
   danger: "bg-danger text-primary-fg font-bold",
   feed: "bg-feed-tint text-feed-ink border border-feed/30 font-bold",
   diaper: "bg-diaper-tint text-diaper-ink border border-diaper/30 font-bold",
+  sleep: "bg-sleep-tint text-sleep-ink border border-sleep/30 font-bold",
 };
 const sizes: Record<Size, string> = {
   md: "min-h-12 px-5 text-base",

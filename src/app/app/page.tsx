@@ -7,24 +7,31 @@ import { StatTiles } from "@/features/feeding/stat-tiles";
 import { TodayTimeline } from "@/features/feeding/timeline";
 import { useRecent } from "@/features/feeding/use-recent";
 import { BackupNudge, InstallHint } from "@/features/nudges";
+import { TimersCard } from "@/features/timers/timers-card";
 import { useT } from "@/i18n";
 
 export default function HomePage() {
   const t = useT();
-  const { feedings, diapers, summary } = useRecent(8);
-  const ready = summary && feedings && diapers;
+  const { feedings, diapers, sleeps, summary, now } = useRecent(8);
+  const ready = summary && feedings && diapers && sleeps;
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <div className="flex flex-col gap-5">
         <Hero />
+        <TimersCard />
         <QuickActions />
       </div>
       <div className="flex flex-col gap-5">
         {ready ? (
           <>
-            <StatTiles days={summary} feedings={feedings} />
-            <TodayTimeline feedings={feedings} diapers={diapers} dayStart={summary[summary.length - 1].start} />
+            <StatTiles days={summary} feedings={feedings} sleeps={sleeps} now={now} />
+            <TodayTimeline
+              feedings={feedings}
+              diapers={diapers}
+              sleeps={sleeps}
+              dayStart={summary[summary.length - 1].start}
+            />
             <DailyTotalsChart days={summary.slice(-7)} />
           </>
         ) : (

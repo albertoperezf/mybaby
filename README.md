@@ -7,12 +7,13 @@ A private, offline-first PWA for newborn care: feeding and diaper log, reminders
 ## Features (MVP)
 
 - **Feeding log**: one-tap presets (2/3/4 oz or 60/90/120 ml, plus your last amount), floating quick-action button for a 2-tap flow from any screen, back-dated times, notes, milk type, edit and undo. Log for several babies at once (twins).
+- **Timers (sleep, breast, pump)**: one-tap live timers on the home screen that survive page reloads — sleep (start/wake up, today's total + nap count), breastfeeding (left/right side switcher and pause), and pumping (side, timer, optional amount; kept separate from baby intake totals). Manual logging and editing for past sleeps, breastfeeds and pump sessions in Quick Log and Log.
 - **Diapers**: wet / dirty / both / dry.
 - **Stats**: last fed X ago, daily totals, average interval, 7-day chart.
 - **Reminders**: "next feeding in X hours" with quiet hours, custom reminders (vitamin, medicine, appointment, other; once/daily/weekly), snooze and dismiss, in-app alarms with notifications, `.ics` calendar export.
 - **Growth**: weight, length and head circumference per visit, charted against WHO Child Growth Standards (0-5 years) with percentiles; corrected age for preterm babies.
 - **Vaccines**: pick a schedule per baby (US CDC 2025 or Spain AEP 2026), see each dose with its recommended window, due-now / upcoming status and "needs 4+ weeks after the previous dose" rules, record a dose in one tap or with date, lot number and clinic, skip a dose, add other vaccines (travel, catch-up), progress summary, optional "visit coming up" reminders, print-friendly vaccine record and CSV export. Schedules live in [src/features/vaccines/schedule-data.ts](src/features/vaccines/schedule-data.ts) with source links and review dates. Informational only: the pediatrician decides what and when, and regional calendars differ.
-- **Backup**: JSON export/import (merge or replace), CSV export/import for feedings, diapers, growth and vaccines, weekly backup nudge, `navigator.storage.persist()`.
+- **Backup**: JSON export/import (merge or replace), CSV export/import for feedings, diapers, sleeps, growth and vaccines, weekly backup nudge, `navigator.storage.persist()`.
 - **PWA**: installable, offline shell, iOS icons and splash screens, home-screen shortcuts.
 - **UI**: mobile-first with bottom nav and thumb-zone button, desktop sidebar dashboard, Light / Dark / Night (red-shifted) themes, English and Spanish, oz/ml and lb-in/kg-cm.
 - **Look and feel ("Soft Dawn")**: warm cream and coral by day, plum twilight in dark mode, ember reds at night; one colour per activity (feeding amber, diapers teal, growth green, reminders plum) used consistently; a home hero with a progress ring toward the next feed, time-of-day greeting and baby age; baby avatars and colours; warm bilingual copy; optional automatic Night theme from 9 PM to 6 AM. Colour tokens live in [src/app/globals.css](src/app/globals.css) and every text pair is checked for WCAG AA by the axe e2e tests.
@@ -110,5 +111,5 @@ This is a personal log, not a medical device. Percentiles are informational and 
 
 ## Roadmap
 
-- **v1**: sleep and breast/pump timers, medication log with dosage, doctor-visit notes, pediatrician PDF report, share-by-file for a second caregiver, encrypted backup file.
+- **v1**: medication log with dosage, doctor-visit notes, pediatrician PDF report, share-by-file for a second caregiver, encrypted backup file.
 - **v2**: end-to-end encrypted sync between devices (QR pairing), milestones and photo journal, more locales, optional Capacitor wrapper for widgets and native notifications.

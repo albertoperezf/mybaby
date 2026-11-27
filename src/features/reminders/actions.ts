@@ -22,7 +22,7 @@ async function lastFeedingAt(babyId: ID): Promise<number | undefined> {
   const last = await db.feedings
     .where("[babyId+at]")
     .between([babyId, 0], [babyId, Number.MAX_SAFE_INTEGER])
-    .filter((f) => !f.deletedAt)
+    .filter((f) => !f.deletedAt && f.kind !== "pump")
     .last();
   return last?.at;
 }

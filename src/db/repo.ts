@@ -1,7 +1,7 @@
 import { ulid } from "ulid";
 import { db } from "./schema";
 import { deviceId, getSetting, setSetting } from "./settings";
-import type { Baby, Diaper, DiaperType, Feeding, ID, Measurement } from "./types";
+import type { Baby, Diaper, DiaperType, Feeding, ID, Measurement, Sleep } from "./types";
 import { deviceTz } from "@/lib/time";
 
 export const BABY_COLORS = ["#e07a5f", "#f2a65a", "#81b29a", "#8e7dbe", "#e56b9a", "#4fa3b8"];
@@ -62,9 +62,12 @@ export async function deleteBabyForever(id: ID): Promise<void> {
 
 export interface FeedingInput {
   at: number;
+  kind?: Feeding["kind"];
   amountMl?: number;
   enteredUnit?: "oz" | "ml";
   milk?: Feeding["milk"];
+  side?: Feeding["side"];
+  durationSec?: number;
   note?: string;
 }
 
@@ -74,7 +77,7 @@ export async function addFeedings(babyIds: ID[], input: FeedingInput): Promise<F
   const rows: Feeding[] = babyIds.map((babyId) => ({
     id: ulid(),
     babyId,
-    kind: "bottle",
+    kind: input.kind ?? "bottle",
     tz: deviceTz(),
     ...input,
     ...base,
@@ -83,8 +86,44 @@ export async function addFeedings(babyIds: ID[], input: FeedingInput): Promise<F
   return rows;
 }
 
-export async function updateFeeding(id: ID, patch: Partial<Pick<Feeding, "at" | "amountMl" | "enteredUnit" | "milk" | "note">>) {
+export async function updateFeeding(
+  id: ID,
+  patch: Partial<Pick<Feeding, "at" | "kind" | "amountMl" | "enteredUnit" | "milk" | "side" | "durationSec" | "note">>,
+) {
   await db.feedings.update(id, { ...patch, updatedAt: Date.now() });
+}
+
+// ---- sleeps ----------------------------------------------------------------
+
+export async function startSleep(babyId: ID, startedAt = Date.now(), note?: string): Promise<Sleep> {
+  const row: Sleep = { id: ulid(), babyId, startedAt, tz: deviceTz(), note, ...(await stamp()) };
+  await db.sleeps.add(row);
+  return row;
+}
+
+export async function stopSleep(id: ID, endedAt = Date.now(), note?: string): Promise<void> {
+  const patch: Partial<Sleep> = { endedAt, updatedAt: Date.now() };
+  if (note !== undefined) patch.note = note;
+  await db.sleeps.update(id, patch);
+}
+
+export async function addSleeps(babyIds: ID[], input: { startedAt: number; endedAt?: number; note?: string }): Promise<Sleep[]> {
+  const base = await stamp();
+  const rows: Sleep[] = babyIds.map((babyId) => ({
+    id: ulid(),
+    babyId,
+    startedAt: input.startedAt,
+    endedAt: input.endedAt,
+    tz: deviceTz(),
+    note: input.note,
+    ...base,
+  }));
+  await db.sleeps.bulkAdd(rows);
+  return rows;
+}
+
+export async function updateSleep(id: ID, patch: Partial<Pick<Sleep, "startedAt" | "endedAt" | "note">>): Promise<void> {
+  await db.sleeps.update(id, { ...patch, updatedAt: Date.now() });
 }
 
 // ---- diapers ---------------------------------------------------------------
@@ -112,7 +151,7 @@ export async function updateMeasurement(id: ID, input: MeasurementInput): Promis
 
 // ---- generic soft delete / undo -------------------------------------------
 
-type SoftTable = "feedings" | "diapers" | "measurements";
+type SoftTable = "feedings" | "diapers" | "measurements" | "sleeps";
 
 export async function softDelete(table: SoftTable, ids: ID[]): Promise<void> {
   const now = Date.now();

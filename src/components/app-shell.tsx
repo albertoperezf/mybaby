@@ -146,14 +146,20 @@ type FrameProps = {
 function Frame({ settings, babies, baby, children }: FrameProps) {
   const t = useT();
   const pathname = usePathname();
-  const [quick, setQuick] = useState<{ open: boolean; tab: "feed" | "diaper"; editFeedingId?: ID }>(() => {
-    // Home-screen / Siri Shortcut deep links: /app?quick=feed or ?quick=diaper
+  const [quick, setQuick] = useState<{ open: boolean; tab: "feed" | "diaper" | "sleep"; editFeedingId?: ID; editSleepId?: ID }>(() => {
+    // Home-screen / Siri Shortcut deep links: /app?quick=feed or ?quick=diaper or ?quick=sleep
     const q = new URLSearchParams(window.location.search).get("quick");
-    return { open: q === "feed" || q === "diaper", tab: q === "diaper" ? "diaper" : "feed" };
+    const tab = q === "diaper" ? "diaper" : q === "sleep" ? "sleep" : "feed";
+    return { open: q === "feed" || q === "diaper" || q === "sleep", tab };
   });
 
-  const openQuickLog = useCallback((opts?: { tab?: "feed" | "diaper"; editFeedingId?: ID }) => {
-    setQuick({ open: true, tab: opts?.tab ?? "feed", editFeedingId: opts?.editFeedingId });
+  const openQuickLog = useCallback((opts?: { tab?: "feed" | "diaper" | "sleep"; editFeedingId?: ID; editSleepId?: ID }) => {
+    setQuick({
+      open: true,
+      tab: opts?.editSleepId ? "sleep" : (opts?.tab ?? "feed"),
+      editFeedingId: opts?.editFeedingId,
+      editSleepId: opts?.editSleepId,
+    });
   }, []);
 
   useEffect(() => {
@@ -265,7 +271,8 @@ function Frame({ settings, babies, baby, children }: FrameProps) {
         open={quick.open}
         initialTab={quick.tab}
         editFeedingId={quick.editFeedingId}
-        onClose={() => setQuick((q) => ({ ...q, open: false }))}
+        editSleepId={quick.editSleepId}
+        onClose={() => setQuick((q) => ({ ...q, open: false, editFeedingId: undefined, editSleepId: undefined }))}
       />
     </AppContextProvider>
   );

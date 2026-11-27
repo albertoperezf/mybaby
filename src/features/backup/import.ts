@@ -7,6 +7,7 @@ import {
   diaperSchema,
   feedingSchema,
   measurementSchema,
+  sleepSchema,
   vaccineSchema,
   type BackupData,
   type BackupFile,
@@ -117,6 +118,7 @@ export async function importBackupText(text: string, mode: "merge" | "replace", 
 
 export function detectCsvKind(header: string[]): CsvKind | null {
   const h = new Set(header);
+  if (h.has("started_iso")) return "sleeps";
   if (h.has("code") && (h.has("given_on") || h.has("due_on"))) return "vaccines";
   if (h.has("time_iso") && h.has("type")) return "diapers";
   if (h.has("time_iso") && (h.has("amount_ml") || h.has("amount_oz") || h.has("kind"))) return "feedings";
@@ -158,6 +160,16 @@ export async function importCsvText(text: string, fallbackBabyId: ID): Promise<I
         amountMl: ml,
         enteredUnit: r.entered_unit === "oz" || r.entered_unit === "ml" ? r.entered_unit : undefined,
         milk: r.milk || undefined,
+        side: r.side === "left" || r.side === "right" || r.side === "both" ? r.side : undefined,
+        durationSec: num(r.duration_sec),
+        note: r.note ? unguardText(r.note) : undefined,
+      });
+    } else if (kind === "sleeps") {
+      result = sleepSchema.safeParse({
+        ...common,
+        startedAt: Date.parse(r.started_iso),
+        endedAt: r.ended_iso ? Date.parse(r.ended_iso) : undefined,
+        tz: r.tz || deviceTz(),
         note: r.note ? unguardText(r.note) : undefined,
       });
     } else if (kind === "vaccines") {

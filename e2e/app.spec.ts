@@ -300,6 +300,45 @@ test.describe("vaccines", () => {
   });
 });
 
+test.describe("timers", () => {
+  test.use({ colorScheme: "light" });
+
+  test("sleep timer survives reload and logs to history", async ({ page }) => {
+    await onboard(page);
+    await page.getByRole("button", { name: "Sleep", exact: true }).click();
+    await expect(page.getByText("Sleeping", { exact: true })).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText("Sleeping", { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Wake up" }).click();
+    await expect(page.getByText(/Sleep logged:/)).toBeVisible();
+
+    await page.getByRole("link", { name: "Log", exact: true }).first().click();
+    await expect(page.getByText(/Sleep · /)).toBeVisible();
+  });
+
+  test("breast and pump timers save entries and pump does not count as a baby feeding", async ({ page }) => {
+    await onboard(page);
+
+    // Breast timer: start left, switch right, save.
+    await page.getByRole("button", { name: "Breast", exact: true }).click();
+    await page.getByRole("button", { name: /Right/ }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText(/Breastfeeding logged:/)).toBeVisible();
+
+    // Pump timer: start, enter amount, save.
+    await page.getByRole("button", { name: "Pump", exact: true }).click();
+    await page.getByLabel("Amount pumped (optional)").fill("4");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("Pumping session logged")).toBeVisible();
+
+    await page.getByRole("link", { name: "Log", exact: true }).first().click();
+    await expect(page.getByText(/Breast \(/).first()).toBeVisible();
+    await expect(page.getByText(/Pump \(L\+R\) · 4 oz/).first()).toBeVisible();
+  });
+});
+
 test.describe("i18n and themes", () => {
   test("switches to Spanish", async ({ page }) => {
     await onboard(page);
