@@ -30,9 +30,10 @@ export default function Privacy() {
       <h2 className="text-xl font-semibold">Site statistics</h2>
       <p>
         The site owner uses Vercel Web Analytics and Speed Insights to count visits and measure loading speed. They
-        record page paths (for example /app/vaccines), country, browser, device type and performance timings. They use
-        no cookies, do not follow you across sites and never see anything you enter in the app. The requests go to this
-        site&apos;s own address, not to a third-party origin.
+        record page paths (with query parameters stripped, for example /app/vaccines), coarse anonymous feature counts
+        (such as &ldquo;sleep timer used&rdquo; or &ldquo;backup exported&rdquo;), country, browser, device type and
+        performance timings. They use no cookies, do not follow you across sites and never see anything you enter in the
+        app. The requests go to this site&apos;s own address, not to a third-party origin.
       </p>
       <h2 className="text-xl font-semibold">Medical disclaimer</h2>
       <p>

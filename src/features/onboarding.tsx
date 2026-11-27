@@ -9,6 +9,7 @@ import type { SettingsValues } from "@/db/types";
 import { BabyForm } from "@/features/babies/baby-form";
 import { useT } from "@/i18n";
 import { requestPersistence } from "@/lib/pwa";
+import { trackFeature } from "@/lib/telemetry";
 
 /** First run: disclaimer, language/units, first baby, or restore from a backup file. */
 export function Onboarding({ settings }: { settings: SettingsValues }) {
@@ -92,6 +93,7 @@ export function Onboarding({ settings }: { settings: SettingsValues }) {
           onSubmit={async (input) => {
             await addBaby(input);
             await accept();
+            trackFeature("onboarding_complete");
           }}
         />
       </Card>

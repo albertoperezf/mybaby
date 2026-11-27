@@ -2,6 +2,7 @@ import { db, EXPORT_SCHEMA_VERSION } from "@/db/schema";
 import { getSetting, setSetting } from "@/db/settings";
 import type { Baby, ID } from "@/db/types";
 import { mlToOz } from "@/lib/units";
+import { trackFeature } from "@/lib/telemetry";
 import { vaccineName } from "@/features/vaccines/labels";
 import { toCsv } from "./csv";
 import type { BackupFile } from "@/db/zod";
@@ -177,4 +178,5 @@ export async function buildCsv(kind: CsvKind): Promise<string> {
 
 export async function markBackedUp() {
   await setSetting("lastBackupAt", Date.now());
+  trackFeature("backup_export");
 }

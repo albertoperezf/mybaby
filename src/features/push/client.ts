@@ -1,5 +1,6 @@
 import { db } from "@/db/schema";
 import { getSetting, setSetting } from "@/db/settings";
+import { trackFeature } from "@/lib/telemetry";
 import type { QuietHours, Reminder } from "@/db/types";
 import { MAX_ITEMS_PER_REQUEST, upcomingFireTimes } from "./occurrences";
 
@@ -59,6 +60,7 @@ export async function enablePush(): Promise<EnableResult> {
     return "error";
   }
   void syncPush().catch(() => undefined);
+  trackFeature("push_enabled");
   return "ok";
 }
 

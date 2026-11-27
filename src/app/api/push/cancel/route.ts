@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const cfg = getPushConfig();
   if (!cfg) return json({ error: "push-not-configured" }, 503);
-  if (rateLimited(request)) return json({ error: "rate-limited" }, 429);
+  if (rateLimited(request)) return json({ error: "rate-limited" }, 429, { "retry-after": "600" });
 
   let body: unknown;
   try {

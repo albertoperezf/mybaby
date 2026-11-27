@@ -91,7 +91,7 @@ Setup:
 Notes and limits:
 
 - QStash must reach `/api/push/send`, so use the production domain (preview deployments behind Vercel Authentication and `localhost` won't work).
-- Only real browser push hosts (FCM, Mozilla, Apple, Windows) are accepted as subscription endpoints, requests are size/time validated, and `/api/push/send` rejects anything not signed by QStash. There is no per-user auth (the app has no accounts), so the scheduling endpoints are protected by validation and a best-effort rate limit; add an Upstash Redis limiter if you expect abuse.
+- Only real browser push hosts (FCM, Mozilla, Apple, Windows) are accepted as subscription endpoints, requests are size/time validated, and `/api/push/send` rejects anything not signed by QStash. There is no per-user auth (the app has no accounts), so the scheduling endpoints are protected by validation and a best-effort rate limit (`429` with `Retry-After`). For stronger edge protection without Redis, add a Vercel Firewall rate-limit rule on `/api/push/*` (e.g. 60 requests / 10 min per IP) in Vercel → Project → Firewall.
 - iOS: requires the app on the Home Screen (16.4+). Android/desktop Chrome, Firefox and Edge work directly.
 - Reminders more than 6 days out, or from an app not opened for more than 6 days, won't have queued pushes until the app is opened again.
 

@@ -6,6 +6,7 @@ import { Button, Field, Segmented, Sheet, inputClass, useToast } from "@/compone
 import { addMeasurement, updateMeasurement, type MeasurementInput } from "@/db/repo";
 import type { Measurement } from "@/db/types";
 import { useT } from "@/i18n";
+import { trackFeature } from "@/lib/telemetry";
 import { toDateInput } from "@/lib/time";
 import { cmToMm, gToLbOz, inToMm, kgToG, lbOzToG, lengthValue } from "@/lib/units";
 
@@ -62,7 +63,10 @@ function MeasurementForm({ onClose, editing }: Omit<Props, "open">) {
       return;
     }
     if (editing) await updateMeasurement(editing.id, input);
-    else await addMeasurement(baby.id, input);
+    else {
+      await addMeasurement(baby.id, input);
+      trackFeature("growth_logged");
+    }
     onClose();
     toast.show({ message: t("growth.saved") });
   }

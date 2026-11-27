@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button, Card } from "@/components/ui";
 import type { Baby, VaccineScheduleId } from "@/db/types";
 import { useLocale, useT } from "@/i18n";
+import { trackFeature } from "@/lib/telemetry";
 import { applySchedule } from "./repo";
 import { SCHEDULES } from "./schedule-data";
 
@@ -23,6 +24,7 @@ export function ScheduleChooser({ baby, onDone }: { baby: Baby; onDone?: () => v
   async function choose(id: VaccineScheduleId | "none") {
     setBusy(true);
     await applySchedule(baby, id);
+    trackFeature("vaccine_schedule");
     setBusy(false);
     onDone?.();
   }

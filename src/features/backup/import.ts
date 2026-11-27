@@ -15,6 +15,7 @@ import {
 import { SCHEDULES } from "@/features/vaccines/schedule-data";
 import { applyQuietHours, nextOccurrence } from "@/features/reminders/schedule";
 import { deviceTz } from "@/lib/time";
+import { trackFeature } from "@/lib/telemetry";
 import { ozToMl } from "@/lib/units";
 import { csvToObjects, unguardText } from "./csv";
 import type { CsvKind } from "./export";
@@ -113,6 +114,7 @@ export async function importBackupText(text: string, mode: "merge" | "replace", 
     if (first) await setSetting("activeBabyId", first.id);
   }
   await deviceId();
+  trackFeature("backup_import");
   return summary;
 }
 

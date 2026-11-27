@@ -49,5 +49,8 @@ export function rateLimited(request: Request, limit = 60, windowMs = 10 * 60_000
   return recent.length > limit;
 }
 
-export const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
+export const json = (body: unknown, status = 200, extraHeaders?: Record<string, string>) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json", "cache-control": "no-store", ...extraHeaders },
+  });

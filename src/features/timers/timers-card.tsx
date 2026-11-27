@@ -9,6 +9,7 @@ import { useActiveSleep } from "@/db/hooks";
 import { softDelete, startSleep, stopSleep, updateSleep } from "@/db/repo";
 import { useLogging } from "@/features/feeding/use-logging";
 import { useLocale, useT } from "@/i18n";
+import { trackFeature } from "@/lib/telemetry";
 import { formatClock } from "@/lib/time";
 import { toMl } from "@/lib/units";
 import {
@@ -57,6 +58,7 @@ export function TimersCard() {
   async function handleStartSleep() {
     await startSleep(baby.id, Date.now());
     setNow(Date.now());
+    trackFeature("sleep_timer");
   }
 
   async function handleWakeUp() {
@@ -83,6 +85,7 @@ export function TimersCard() {
     const { leftSec, rightSec, totalSec } = breastElapsed(breast, ts);
     const side = breastSummarySide(leftSec, rightSec);
     setBreastTimer(baby.id, null);
+    trackFeature("breast_timer");
     await logFeeding([baby.id], {
       at: breast.startedAt,
       kind: "breast",
@@ -102,6 +105,7 @@ export function TimersCard() {
     const startedAt = pump.startedAt;
     setPumpTimer(baby.id, null);
     setPumpAmount("");
+    trackFeature("pump_timer");
     await logFeeding([baby.id], {
       at: startedAt,
       kind: "pump",

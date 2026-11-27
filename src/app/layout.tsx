@@ -1,16 +1,33 @@
 import type { Metadata, Viewport } from "next";
 import { SerwistProvider } from "@serwist/turbopack/react";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { ReactNode } from "react";
 import splash from "../../public/icons/splash.json";
+import { Telemetry } from "@/components/telemetry";
 import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
+const siteOrigin = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin),
   applicationName: BRAND.name,
   title: { default: `${BRAND.name} - ${BRAND.tagline}`, template: `%s - ${BRAND.name}` },
   description: BRAND.description,
+  openGraph: {
+    type: "website",
+    siteName: BRAND.name,
+    title: `${BRAND.name} - ${BRAND.tagline}`,
+    description: BRAND.description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${BRAND.name} - ${BRAND.tagline}`,
+    description: BRAND.description,
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -61,8 +78,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {children}
         </SerwistProvider>
         {/* Both load from this site's own /_vercel path, so the CSP stays 'self'. */}
-        <Analytics />
-        <SpeedInsights />
+        <Telemetry />
       </body>
     </html>
   );
