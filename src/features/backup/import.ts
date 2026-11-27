@@ -7,6 +7,7 @@ import {
   diaperSchema,
   feedingSchema,
   measurementSchema,
+  medicationSchema,
   sleepSchema,
   vaccineSchema,
   type BackupData,
@@ -122,6 +123,7 @@ export function detectCsvKind(header: string[]): CsvKind | null {
   const h = new Set(header);
   if (h.has("started_iso")) return "sleeps";
   if (h.has("code") && (h.has("given_on") || h.has("due_on"))) return "vaccines";
+  if (h.has("time_iso") && h.has("dose") && h.has("unit")) return "medications";
   if (h.has("time_iso") && h.has("type")) return "diapers";
   if (h.has("time_iso") && (h.has("amount_ml") || h.has("amount_oz") || h.has("kind"))) return "feedings";
   if (h.has("date") && (h.has("weight_g") || h.has("weight_kg") || h.has("length_mm") || h.has("head_mm"))) return "measurements";
@@ -193,6 +195,16 @@ export async function importCsvText(text: string, fallbackBabyId: ID): Promise<I
         skippedOn: r.skipped_on || undefined,
         lot: r.lot ? unguardText(r.lot) : undefined,
         provider: r.provider ? unguardText(r.provider) : undefined,
+        note: r.note ? unguardText(r.note) : undefined,
+      });
+    } else if (kind === "medications") {
+      result = medicationSchema.safeParse({
+        ...common,
+        name: unguardText(r.name ?? ""),
+        dose: num(r.dose),
+        unit: unguardText(r.unit ?? ""),
+        at: Date.parse(r.time_iso),
+        tz: r.tz || deviceTz(),
         note: r.note ? unguardText(r.note) : undefined,
       });
     } else if (kind === "diapers") {

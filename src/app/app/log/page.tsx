@@ -1,16 +1,18 @@
 "use client";
 
-import { Droplet, Droplets, Heart, Milk, Moon, Pencil, Trash2 } from "lucide-react";
+import { Droplet, Droplets, Heart, Milk, Moon, Pencil, Pill, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useApp } from "@/components/app-context";
 import { Button, Card, PageTitle, useToast } from "@/components/ui";
 import { EmptyState, MoonIllustration } from "@/components/illustrations";
 import { restore, softDelete } from "@/db/repo";
-import type { Diaper, Feeding, Sleep } from "@/db/types";
+import type { Diaper, Feeding, Medication, Sleep } from "@/db/types";
 import { rescheduleFeedingReminder } from "@/features/reminders/actions";
 import { DailyTotalsChart } from "@/features/feeding/daily-chart";
 import { StatTiles } from "@/features/feeding/stat-tiles";
 import { useRecent } from "@/features/feeding/use-recent";
+import { formatDose } from "@/features/medications/logic";
+import { MedicationSheet } from "@/features/medications/medication-sheet";
 import { formatDurationShort } from "@/features/timers/timer-store";
 import { useLocale, useT, type MessageKey } from "@/i18n";
 import { dayKey, formatClock, formatDayHeading } from "@/lib/time";
@@ -19,7 +21,8 @@ import { formatVolume } from "@/lib/units";
 type Entry =
   | { kind: "feed"; at: number; tz: string; row: Feeding }
   | { kind: "diaper"; at: number; tz: string; row: Diaper }
-  | { kind: "sleep"; at: number; tz: string; row: Sleep };
+  | { kind: "sleep"; at: number; tz: string; row: Sleep }
+  | { kind: "med"; at: number; tz: string; row: Medication };
 
 export default function LogPage() {
   const { baby, settings, openQuickLog } = useApp();
@@ -27,14 +30,16 @@ export default function LogPage() {
   const locale = useLocale();
   const toast = useToast();
   const [days, setDays] = useState(14);
-  const { feedings, diapers, sleeps, summary, now } = useRecent(days);
+  const [editingMed, setEditingMed] = useState<Medication | undefined>();
+  const { feedings, diapers, sleeps, medications, summary, now } = useRecent(days);
 
   const groups = useMemo(() => {
-    if (!feedings || !diapers || !sleeps) return undefined;
+    if (!feedings || !diapers || !sleeps || !medications) return undefined;
     const entries: Entry[] = [
       ...feedings.map((row) => ({ kind: "feed" as const, at: row.at, tz: row.tz, row })),
       ...diapers.map((row) => ({ kind: "diaper" as const, at: row.at, tz: row.tz, row })),
       ...sleeps.map((row) => ({ kind: "sleep" as const, at: row.startedAt, tz: row.tz, row })),
+      ...medications.map((row) => ({ kind: "med" as const, at: row.at, tz: row.tz, row })),
     ].sort((a, b) => b.at - a.at);
     const map = new Map<string, Entry[]>();
     for (const e of entries) {
@@ -42,10 +47,11 @@ export default function LogPage() {
       map.set(key, [...(map.get(key) ?? []), e]);
     }
     return [...map.entries()];
-  }, [feedings, diapers, sleeps, settings.dayStartHour]);
+  }, [feedings, diapers, sleeps, medications, settings.dayStartHour]);
 
   async function remove(e: Entry) {
-    const table = e.kind === "feed" ? "feedings" : e.kind === "diaper" ? "diapers" : "sleeps";
+    const table =
+      e.kind === "feed" ? "feedings" : e.kind === "diaper" ? "diapers" : e.kind === "sleep" ? "sleeps" : "medications";
     await softDelete(table, [e.row.id]);
     if (e.kind === "feed" && e.row.kind !== "pump") await rescheduleFeedingReminder(baby.id);
     toast.show({
@@ -119,7 +125,7 @@ export default function LogPage() {
                       ? "bg-sleep-tint text-sleep-ink"
                       : e.kind === "diaper"
                         ? "bg-diaper-tint text-diaper-ink"
-                        : e.row.kind === "pump"
+                        : e.kind === "med" || e.row.kind === "pump"
                           ? "bg-remind-tint text-remind-ink"
                           : "bg-feed-tint text-feed-ink";
                   return (
@@ -127,6 +133,7 @@ export default function LogPage() {
                       <span className={`grid size-11 shrink-0 place-items-center rounded-full ${iconStyle}`}>
                         {e.kind === "sleep" && <Moon aria-hidden className="size-5" />}
                         {e.kind === "diaper" && <Droplets aria-hidden className="size-5" />}
+                        {e.kind === "med" && <Pill aria-hidden className="size-5" />}
                         {e.kind === "feed" && e.row.kind === "breast" && <Heart aria-hidden className="size-5" />}
                         {e.kind === "feed" && e.row.kind === "pump" && <Droplet aria-hidden className="size-5" />}
                         {e.kind === "feed" && e.row.kind !== "breast" && e.row.kind !== "pump" && <Milk aria-hidden className="size-5" />}
@@ -137,9 +144,11 @@ export default function LogPage() {
                             ? feedingTitle(e.row)
                             : e.kind === "diaper"
                               ? t(`diaper.${e.row.type}` as MessageKey)
-                              : e.row.endedAt
-                                ? `${t("timer.sleepLabel")} · ${formatDurationShort((e.row.endedAt - e.row.startedAt) / 1000)}`
-                                : t("timer.activeSleep")}
+                              : e.kind === "med"
+                                ? `${e.row.name} · ${formatDose(e.row.dose, e.row.unit)}`
+                                : e.row.endedAt
+                                  ? `${t("timer.sleepLabel")} · ${formatDurationShort((e.row.endedAt - e.row.startedAt) / 1000)}`
+                                  : t("timer.activeSleep")}
                           <span className="ml-2 font-normal text-muted">
                             {e.kind === "sleep" && e.row.endedAt
                               ? `${formatClock(e.row.startedAt, locale)} – ${formatClock(e.row.endedAt, locale)}`
@@ -155,7 +164,7 @@ export default function LogPage() {
                           </p>
                         )}
                       </div>
-                      {(e.kind === "feed" || e.kind === "sleep") && (
+                      {(e.kind === "feed" || e.kind === "sleep" || e.kind === "med") && (
                         <button
                           type="button"
                           aria-label={t("common.edit")}
@@ -163,7 +172,9 @@ export default function LogPage() {
                           onClick={() =>
                             e.kind === "feed"
                               ? openQuickLog({ editFeedingId: e.row.id })
-                              : openQuickLog({ editSleepId: e.row.id })
+                              : e.kind === "sleep"
+                                ? openQuickLog({ editSleepId: e.row.id })
+                                : setEditingMed(e.row)
                           }
                         >
                           <Pencil aria-hidden className="size-5" />
@@ -191,6 +202,7 @@ export default function LogPage() {
           {t("log.loadMore")}
         </Button>
       )}
+      <MedicationSheet open={Boolean(editingMed)} editing={editingMed} onClose={() => setEditingMed(undefined)} />
     </div>
   );
 }

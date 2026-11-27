@@ -1,15 +1,16 @@
 "use client";
 
-import { Droplet, Droplets, Heart, Milk, Moon } from "lucide-react";
+import { Droplet, Droplets, Heart, Milk, Moon, Pill } from "lucide-react";
 import { useApp } from "@/components/app-context";
 import { Card, SectionTitle } from "@/components/ui";
-import type { Diaper, Feeding, Sleep } from "@/db/types";
+import type { Diaper, Feeding, Medication, Sleep } from "@/db/types";
+import { formatDose } from "@/features/medications/logic";
 import { formatDurationShort } from "@/features/timers/timer-store";
 import { useLocale, useT, type MessageKey } from "@/i18n";
 import { formatClock } from "@/lib/time";
 import { formatVolume } from "@/lib/units";
 
-type TileKind = "feed" | "breast" | "pump" | "diaper" | "sleep";
+type TileKind = "feed" | "breast" | "pump" | "diaper" | "sleep" | "med";
 
 const TILE_STYLE: Record<TileKind, string> = {
   feed: "bg-feed-tint text-feed-ink",
@@ -17,18 +18,21 @@ const TILE_STYLE: Record<TileKind, string> = {
   pump: "bg-remind-tint text-remind-ink",
   diaper: "bg-diaper-tint text-diaper-ink",
   sleep: "bg-sleep-tint text-sleep-ink",
+  med: "bg-remind-tint text-remind-ink",
 };
 
-/** Today's feedings, diapers and sleeps as a scrollable strip, newest first. */
+/** Today's feedings, diapers, sleeps and medications as a scrollable strip, newest first. */
 export function TodayTimeline({
   feedings,
   diapers,
   sleeps = [],
+  medications = [],
   dayStart,
 }: {
   feedings: Feeding[];
   diapers: Diaper[];
   sleeps?: Sleep[];
+  medications?: Medication[];
   dayStart: number;
 }) {
   const { settings } = useApp();
@@ -75,6 +79,14 @@ export function TodayTimeline({
         id: s.id,
         label: s.endedAt ? formatDurationShort((s.endedAt - s.startedAt) / 1000) : t("timer.activeSleep"),
       })),
+    ...medications
+      .filter((m) => m.at >= dayStart)
+      .map((m) => ({
+        kind: "med" as TileKind,
+        at: m.at,
+        id: m.id,
+        label: formatDose(m.dose, m.unit),
+      })),
   ].sort((a, b) => b.at - a.at);
 
   if (entries.length === 0) return null;
@@ -95,6 +107,7 @@ export function TodayTimeline({
             {e.kind === "pump" && <Droplet aria-hidden className="size-5 text-remind" />}
             {e.kind === "diaper" && <Droplets aria-hidden className="size-5 text-diaper" />}
             {e.kind === "sleep" && <Moon aria-hidden className="size-5 text-sleep" />}
+            {e.kind === "med" && <Pill aria-hidden className="size-5 text-remind" />}
             <span className="text-sm font-extrabold tabular-nums">{e.label}</span>
             <span className="text-xs font-semibold opacity-85">{formatClock(e.at, locale)}</span>
           </li>

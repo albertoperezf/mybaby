@@ -8,6 +8,7 @@ export type FeatureEvent =
   | "breast_timer"
   | "pump_timer"
   | "growth_logged"
+  | "medication_logged"
   | "backup_export"
   | "backup_import"
   | "push_enabled";

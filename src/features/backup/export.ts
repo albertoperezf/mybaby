@@ -7,7 +7,7 @@ import { vaccineName } from "@/features/vaccines/labels";
 import { toCsv } from "./csv";
 import type { BackupFile } from "@/db/zod";
 
-export type CsvKind = "feedings" | "diapers" | "measurements" | "vaccines" | "sleeps";
+export type CsvKind = "feedings" | "diapers" | "measurements" | "vaccines" | "sleeps" | "medications";
 
 export async function buildBackup(): Promise<BackupFile> {
   const [babies, feedings, diapers, measurements, sleeps, medications, vaccines, reminders] = await Promise.all([
@@ -153,6 +153,29 @@ export async function buildCsv(kind: CsvKind): Promise<string> {
         note: s.note ?? "",
       }));
     return toCsv(["id", "baby_id", "baby_name", "started_iso", "ended_iso", "duration_min", "tz", "note"], rows, ["baby_name", "note"]);
+  }
+
+  if (kind === "medications") {
+    const rows = (await db.medications.toArray())
+      .filter((m) => !m.deletedAt)
+      .sort((a, b) => a.at - b.at)
+      .map((m) => ({
+        id: m.id,
+        baby_id: m.babyId,
+        baby_name: name(m.babyId),
+        time_iso: isoTime(m.at),
+        tz: m.tz,
+        name: m.name,
+        dose: m.dose,
+        unit: m.unit,
+        note: m.note ?? "",
+      }));
+    return toCsv(["id", "baby_id", "baby_name", "time_iso", "tz", "name", "dose", "unit", "note"], rows, [
+      "baby_name",
+      "name",
+      "unit",
+      "note",
+    ]);
   }
 
   const rows = (await db.measurements.toArray())

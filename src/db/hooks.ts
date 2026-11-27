@@ -4,7 +4,7 @@ import Dexie from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo } from "react";
 import { db } from "./schema";
-import type { Baby, Diaper, Feeding, ID, Measurement, Reminder, Sleep, Vaccine } from "./types";
+import type { Baby, Diaper, Feeding, ID, Measurement, Medication, Reminder, Sleep, Vaccine } from "./types";
 
 const FOREVER = Number.MAX_SAFE_INTEGER;
 
@@ -122,6 +122,22 @@ export function useVaccines(babyId: ID | null | undefined): Vaccine[] | undefine
   );
 }
 
+export function useMedications(babyId: ID | null | undefined, since = 0): Medication[] | undefined {
+  return useLiveQuery(
+    async () =>
+      babyId
+        ? (
+            await db.medications
+              .where("[babyId+at]")
+              .between([babyId, since], [babyId, FOREVER])
+              .filter((m) => !m.deletedAt)
+              .toArray()
+          ).reverse()
+        : [],
+    [babyId, since],
+  );
+}
+
 export function useReminders(): Reminder[] | undefined {
   return useLiveQuery(async () => (await db.reminders.toArray()).filter((r) => !r.deletedAt), []);
 }
@@ -129,7 +145,12 @@ export function useReminders(): Reminder[] | undefined {
 /** Counts of records, used for backup nudges. */
 export function useEntryCount(): number | undefined {
   return useLiveQuery(
-    async () => (await db.feedings.count()) + (await db.diapers.count()) + (await db.measurements.count()) + (await db.sleeps.count()),
+    async () =>
+      (await db.feedings.count()) +
+      (await db.diapers.count()) +
+      (await db.measurements.count()) +
+      (await db.sleeps.count()) +
+      (await db.medications.count()),
     [],
   );
 }

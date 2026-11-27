@@ -1,7 +1,7 @@
 import { ulid } from "ulid";
 import { db } from "./schema";
 import { deviceId, getSetting, setSetting } from "./settings";
-import type { Baby, Diaper, DiaperType, Feeding, ID, Measurement, Sleep } from "./types";
+import type { Baby, Diaper, DiaperType, Feeding, ID, Measurement, Medication, Sleep } from "./types";
 import { deviceTz } from "@/lib/time";
 
 export const BABY_COLORS = ["#e07a5f", "#f2a65a", "#81b29a", "#8e7dbe", "#e56b9a", "#4fa3b8"];
@@ -149,9 +149,48 @@ export async function updateMeasurement(id: ID, input: MeasurementInput): Promis
   await db.measurements.update(id, { ...input, updatedAt: Date.now() });
 }
 
+// ---- medications -----------------------------------------------------------
+
+export interface MedicationInput {
+  name: string;
+  dose: number;
+  unit: string;
+  at?: number;
+  reminderId?: ID;
+  note?: string;
+}
+
+export async function addMedication(babyId: ID, input: MedicationInput): Promise<Medication> {
+  const row: Medication = {
+    id: ulid(),
+    babyId,
+    name: input.name.trim(),
+    dose: input.dose,
+    unit: input.unit.trim(),
+    at: input.at ?? Date.now(),
+    tz: deviceTz(),
+    reminderId: input.reminderId,
+    note: input.note?.trim() || undefined,
+    ...(await stamp()),
+  };
+  await db.medications.add(row);
+  return row;
+}
+
+export async function updateMedication(
+  id: ID,
+  patch: Partial<Pick<Medication, "name" | "dose" | "unit" | "at" | "note">>,
+): Promise<void> {
+  const next: Partial<Medication> = { ...patch, updatedAt: Date.now() };
+  if (patch.name !== undefined) next.name = patch.name.trim();
+  if (patch.unit !== undefined) next.unit = patch.unit.trim();
+  if (patch.note !== undefined) next.note = patch.note.trim() || undefined;
+  await db.medications.update(id, next);
+}
+
 // ---- generic soft delete / undo -------------------------------------------
 
-type SoftTable = "feedings" | "diapers" | "measurements" | "sleeps";
+type SoftTable = "feedings" | "diapers" | "measurements" | "sleeps" | "medications";
 
 export async function softDelete(table: SoftTable, ids: ID[]): Promise<void> {
   const now = Date.now();

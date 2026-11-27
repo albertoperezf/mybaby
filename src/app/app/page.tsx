@@ -12,8 +12,8 @@ import { useT } from "@/i18n";
 
 export default function HomePage() {
   const t = useT();
-  const { feedings, diapers, sleeps, summary, now } = useRecent(8);
-  const ready = summary && feedings && diapers && sleeps;
+  const { feedings, diapers, sleeps, medications, summary, now } = useRecent(8);
+  const ready = summary && feedings && diapers && sleeps && medications;
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
@@ -30,6 +30,7 @@ export default function HomePage() {
               feedings={feedings}
               diapers={diapers}
               sleeps={sleeps}
+              medications={medications}
               dayStart={summary[summary.length - 1].start}
             />
             <DailyTotalsChart days={summary.slice(-7)} />

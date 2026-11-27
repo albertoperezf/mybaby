@@ -339,6 +339,35 @@ test.describe("timers", () => {
   });
 });
 
+test.describe("medications", () => {
+  test.use({ colorScheme: "light" });
+
+  test("log a dose, repeat with one tap, edit, and see it in Log", async ({ page }) => {
+    await onboard(page);
+    await page.getByRole("link", { name: "Health" }).first().click();
+    await page.getByRole("link", { name: "Meds" }).first().click();
+    await expect(page.getByRole("heading", { name: "Medications", level: 1 })).toBeVisible();
+
+    await page.getByRole("button", { name: "Log dose" }).first().click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByRole("button", { name: "Vitamin D" }).click();
+    await sheet.getByLabel("Dose").fill("400");
+    await sheet.getByLabel("Unit").selectOption("IU");
+    await sheet.getByRole("button", { name: "Save" }).click();
+
+    await expect(page.getByText("Dose logged")).toBeVisible();
+    await expect(page.getByText("Vitamin D · 400 IU")).toBeVisible();
+
+    // One-tap repeat from Recent medicines
+    await page.getByRole("button", { name: /Give Vitamin D/ }).click();
+    await expect(page.getByText("2 today")).toBeVisible();
+
+    // Appears in the chronological Log
+    await page.getByRole("link", { name: "Log", exact: true }).first().click();
+    await expect(page.getByText("Vitamin D · 400 IU").first()).toBeVisible();
+  });
+});
+
 test.describe("i18n and themes", () => {
   test("switches to Spanish", async ({ page }) => {
     await onboard(page);
@@ -371,6 +400,12 @@ test.describe("i18n and themes", () => {
         const vaccineResults = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
         expect(vaccineResults.violations.map((v) => `vaccines ${step}: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
       }
+
+      // Medications page
+      await page.getByRole("link", { name: "Meds", exact: true }).first().click();
+      await page.waitForTimeout(300);
+      const medResults = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+      expect(medResults.violations.map((v) => `meds: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
     });
   }
 });
