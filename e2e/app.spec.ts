@@ -464,6 +464,15 @@ test.describe("doctor visits", () => {
       await page.mouse.up();
     }
     await expect(dialog).toHaveCount(0);
+
+    // Open Pediatrician PDF report and verify sections + toggles
+    await page.getByRole("link", { name: "Pediatrician PDF" }).click();
+    await expect(page.getByRole("heading", { name: "Pediatrician report", level: 1 })).toBeVisible();
+    await expect(page.getByText("Well-child checkup")).toBeVisible();
+    await expect(page.getByText("When to start tummy time?")).toBeVisible();
+
+    await page.getByRole("checkbox", { name: "Doctor visits & questions" }).uncheck();
+    await expect(page.getByText("When to start tummy time?")).toHaveCount(0);
   });
 });
 
@@ -500,13 +509,18 @@ test.describe("i18n and themes", () => {
         expect(vaccineResults.violations.map((v) => `vaccines ${step}: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
       }
 
-      // Medications & Doctor visits pages
+      // Medications, Doctor visits, and Pediatrician report pages
       for (const tab of ["Meds", "Visits"]) {
         await page.getByRole("link", { name: tab, exact: true }).first().click();
         await page.waitForTimeout(300);
         const tabResults = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
         expect(tabResults.violations.map((v) => `${tab}: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
       }
+
+      await page.getByRole("link", { name: "Pediatrician PDF" }).click();
+      await page.waitForTimeout(300);
+      const reportResults = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+      expect(reportResults.violations.map((v) => `report: ${v.id} (${v.nodes[0]?.target})`)).toEqual([]);
     });
   }
 });

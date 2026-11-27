@@ -1,6 +1,7 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { FileText, Pencil, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/components/app-context";
 import { Button, Card, PageTitle, Segmented, Switch, useToast } from "@/components/ui";
@@ -98,10 +99,20 @@ export default function GrowthPage() {
       <HealthTabs />
       <PageTitle
         action={
-          <Button variant="primary" onClick={() => setSheet({ open: true })}>
-            <Plus aria-hidden className="size-5" />
-            {t("growth.add")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/app/report"
+              aria-label={t("report.open")}
+              className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-line bg-surface2 px-4 text-sm font-semibold text-fg transition active:scale-[0.97]"
+            >
+              <FileText aria-hidden className="size-4" />
+              <span className="hidden sm:inline">{t("report.open")}</span>
+            </Link>
+            <Button variant="primary" onClick={() => setSheet({ open: true })}>
+              <Plus aria-hidden className="size-5" />
+              {t("growth.add")}
+            </Button>
+          </div>
         }
       >
         {t("nav.growth")}

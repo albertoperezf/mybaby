@@ -15,6 +15,7 @@ A private, offline-first PWA for newborn care: feeding and diaper log, reminders
 - **Vaccines**: pick a schedule per baby (US CDC 2025 or Spain AEP 2026), see each dose with its recommended window, due-now / upcoming status and "needs 4+ weeks after the previous dose" rules, record a dose in one tap or with date, lot number and clinic, skip a dose, add other vaccines (travel, catch-up), progress summary, optional "visit coming up" reminders, print-friendly vaccine record and CSV export. Schedules live in [src/features/vaccines/schedule-data.ts](src/features/vaccines/schedule-data.ts) with source links and review dates. Informational only: the pediatrician decides what and when, and regional calendars differ.
 - **Medications**: log medicines and vitamins with dosage, unit (`ml`, `drops`, `IU`, `mg`, `tsp`, `puffs`), time and notes; one-tap "Give again" cards for recent medicines showing elapsed time since the last dose and today's count; quick-fill chips; print-friendly history and CSV export/import; integrated into the daily timeline and Log.
 - **Doctor visits**: plan upcoming appointments with a checkable "Questions to ask" list, record doctor's notes, provider, and follow-up dates, optionally schedule a day-before reminder, print visit summaries, and export/import CSV.
+- **Pediatrician PDF report**: dedicated print/Save-as-PDF clinical summary (`/app/report`) combining baby details, 7/14/30-day feeding/diaper/sleep averages and daily table, WHO growth percentiles, vaccine status, recent medications, and upcoming visit questions — generated 100% locally with zero storage or upload overhead.
 - **Backup & caregiver share**: plain or AES-256-GCM encrypted JSON backup (PBKDF2-SHA256, 310k iterations, passphrase never stored), merge or replace import, share-by-file for a second caregiver (optional single baby, time range, passphrase, omits personal device settings so merging preserves both caregivers' logs and preferences), CSV export/import for feedings, diapers, sleeps, growth, vaccines, medications and visits, weekly backup nudge, `navigator.storage.persist()`.
 - **PWA**: installable, offline shell, iOS icons and splash screens, home-screen shortcuts.
 - **UI**: mobile-first with bottom nav and thumb-zone button, desktop sidebar dashboard, Light / Dark / Night (red-shifted) themes, English and Spanish, oz/ml and lb-in/kg-cm.
@@ -113,5 +114,5 @@ This is a personal log, not a medical device. Percentiles are informational and 
 
 ## Roadmap
 
-- **v1**: pediatrician PDF report.
+- **v1**: complete (feeding/diaper log, sleep & breast/pump timers, reminders + optional Web Push, WHO growth curves, vaccine checklist, medication log, doctor-visit notes, pediatrician PDF report, encrypted backup & caregiver share-by-file).
 - **v2**: end-to-end encrypted sync between devices (QR pairing), milestones and photo journal, more locales, optional Capacitor wrapper for widgets and native notifications.

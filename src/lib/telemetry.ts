@@ -10,6 +10,7 @@ export type FeatureEvent =
   | "growth_logged"
   | "medication_logged"
   | "visit_logged"
+  | "report_printed"
   | "backup_export"
   | "backup_import"
   | "push_enabled";

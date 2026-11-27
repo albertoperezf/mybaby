@@ -25,7 +25,7 @@ import { ToastProvider } from "./ui";
 const NAV: { href: string; label: MessageKey; icon: LucideIcon; also?: string[] }[] = [
   { href: "/app", label: "nav.home", icon: House },
   { href: "/app/log", label: "nav.log", icon: ClipboardList },
-  { href: "/app/growth", label: "nav.health", icon: HeartPulse, also: ["/app/vaccines", "/app/medications", "/app/visits"] },
+  { href: "/app/growth", label: "nav.health", icon: HeartPulse, also: ["/app/vaccines", "/app/medications", "/app/visits", "/app/report"] },
   { href: "/app/reminders", label: "nav.reminders", icon: Bell },
   { href: "/app/settings", label: "nav.settings", icon: Settings },
 ];

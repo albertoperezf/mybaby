@@ -273,7 +273,12 @@ dialog.sheet::backdrop {
     --growth-ink: #000;
     --remind-tint: #fff;
     --remind-ink: #000;
+    --sleep-tint: #fff;
+    --sleep-ink: #000;
     --shadow: none;
     color-scheme: light;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
   }
 }

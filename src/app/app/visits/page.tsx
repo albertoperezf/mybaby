@@ -1,7 +1,8 @@
 "use client";
 
 import clsx from "clsx";
-import { Calendar, Download, Pencil, Plus, Printer, Stethoscope, Trash2 } from "lucide-react";
+import { Calendar, Download, FileText, Pencil, Plus, Printer, Stethoscope, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useApp, useNow } from "@/components/app-context";
 import { HealthTabs } from "@/components/health-tabs";
@@ -155,16 +156,24 @@ export default function VisitsPage() {
       {visits && visits.length === 0 && (
         <Card>
           <EmptyState art={<MoonIllustration />} text={t("visit.empty")}>
-            <Button
-              variant="primary"
-              className="mt-2"
-              onClick={() => {
-                setEditing(undefined);
-                setSheetOpen(true);
-              }}
-            >
-              {t("visit.add")}
-            </Button>
+            <div className="mt-2 flex flex-wrap justify-center gap-2">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setEditing(undefined);
+                  setSheetOpen(true);
+                }}
+              >
+                {t("visit.add")}
+              </Button>
+              <Link
+                href="/app/report"
+                className="inline-flex min-h-12 items-center gap-2 rounded-2xl border border-line bg-surface2 px-5 text-base font-semibold text-fg transition active:scale-[0.97]"
+              >
+                <FileText aria-hidden className="size-4" />
+                {t("report.open")}
+              </Link>
+            </div>
           </EmptyState>
         </Card>
       )}
@@ -189,6 +198,13 @@ export default function VisitsPage() {
 
           <div className="flex flex-col gap-4 print:hidden">
             <Card className="flex flex-col gap-3">
+              <Link
+                href="/app/report"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-5 text-base font-bold text-primary-fg shadow-soft transition active:scale-[0.97]"
+              >
+                <FileText aria-hidden className="size-4" />
+                {t("report.open")}
+              </Link>
               <div className="grid grid-cols-2 gap-2">
                 <Button onClick={() => window.print()}>
                   <Printer aria-hidden className="size-4" />
