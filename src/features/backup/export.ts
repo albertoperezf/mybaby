@@ -9,32 +9,66 @@ import type { BackupFile } from "@/db/zod";
 
 export type CsvKind = "feedings" | "diapers" | "measurements" | "vaccines" | "sleeps" | "medications" | "visits";
 
-export async function buildBackup(): Promise<BackupFile> {
-  const [babies, feedings, diapers, measurements, sleeps, medications, vaccines, visits, reminders] = await Promise.all([
-    db.babies.toArray(),
-    db.feedings.toArray(),
-    db.diapers.toArray(),
-    db.measurements.toArray(),
-    db.sleeps.toArray(),
-    db.medications.toArray(),
-    db.vaccines.toArray(),
-    db.visits.toArray(),
-    db.reminders.toArray(),
-  ]);
-  const [locale, theme, volumeUnit, measureUnit, defaultIntervalMin, quietHours, dayStartHour] = await Promise.all([
-    getSetting("locale"),
-    getSetting("theme"),
-    getSetting("volumeUnit"),
-    getSetting("measureUnit"),
-    getSetting("defaultIntervalMin"),
-    getSetting("quietHours"),
-    getSetting("dayStartHour"),
-  ]);
+export interface BackupOptions {
+  /** Limit export to a single baby (used for caregiver share-by-file). */
+  babyId?: ID;
+  /** Omit device preferences (theme, language, quiet hours) when sharing with another caregiver. */
+  includeSettings?: boolean;
+  /** Optional lower-bound timestamp (epoch ms) for time-series entries. */
+  since?: number;
+}
+
+export async function buildBackup(opts: BackupOptions = {}): Promise<BackupFile> {
+  const { babyId, includeSettings = true, since } = opts;
+  const sinceIso = since !== undefined ? new Date(since).toISOString().slice(0, 10) : undefined;
+
+  const [allBabies, allFeedings, allDiapers, allMeasurements, allSleeps, allMeds, allVaccines, allVisits, allReminders] =
+    await Promise.all([
+      db.babies.toArray(),
+      db.feedings.toArray(),
+      db.diapers.toArray(),
+      db.measurements.toArray(),
+      db.sleeps.toArray(),
+      db.medications.toArray(),
+      db.vaccines.toArray(),
+      db.visits.toArray(),
+      db.reminders.toArray(),
+    ]);
+
+  const byBaby = <T extends { babyId?: ID }>(rows: T[]) => (babyId ? rows.filter((r) => r.babyId === babyId) : rows);
+
+  const babies = babyId ? allBabies.filter((b) => b.id === babyId) : allBabies;
+  const feedings = byBaby(allFeedings).filter((f) => since === undefined || f.at >= since);
+  const diapers = byBaby(allDiapers).filter((d) => since === undefined || d.at >= since);
+  const measurements = byBaby(allMeasurements).filter((m) => sinceIso === undefined || m.measuredOn >= sinceIso);
+  const sleeps = byBaby(allSleeps).filter(
+    (s) => since === undefined || s.startedAt >= since || s.endedAt === undefined || s.endedAt >= since,
+  );
+  const medications = byBaby(allMeds).filter((m) => since === undefined || m.at >= since);
+  const vaccines = byBaby(allVaccines);
+  const visits = byBaby(allVisits).filter((v) => sinceIso === undefined || v.visitedOn >= sinceIso);
+  const reminders = byBaby(allReminders);
+
+  const settings = includeSettings
+    ? await (async () => {
+        const [locale, theme, volumeUnit, measureUnit, defaultIntervalMin, quietHours, dayStartHour] = await Promise.all([
+          getSetting("locale"),
+          getSetting("theme"),
+          getSetting("volumeUnit"),
+          getSetting("measureUnit"),
+          getSetting("defaultIntervalMin"),
+          getSetting("quietHours"),
+          getSetting("dayStartHour"),
+        ]);
+        return { locale, theme, volumeUnit, measureUnit, defaultIntervalMin, quietHours, dayStartHour };
+      })()
+    : undefined;
+
   return {
     app: "mybaby",
     schemaVersion: EXPORT_SCHEMA_VERSION,
     exportedAt: Date.now(),
-    settings: { locale, theme, volumeUnit, measureUnit, defaultIntervalMin, quietHours, dayStartHour },
+    ...(settings ? { settings } : {}),
     data: {
       babies,
       feedings,
@@ -55,11 +89,11 @@ export async function buildBackup(): Promise<BackupFile> {
   };
 }
 
-export const backupFilename = (ext: "json" | "csv", stem = "mybabylog-backup") =>
+export const backupFilename = (ext: "json" | "csv" | "enc.json", stem = "mybabylog-backup") =>
   `${stem}-${new Date().toISOString().slice(0, 10)}.${ext}`;
 
-export async function backupJson(): Promise<string> {
-  return JSON.stringify(await buildBackup(), null, 2);
+export async function backupJson(opts?: BackupOptions): Promise<string> {
+  return JSON.stringify(await buildBackup(opts), null, 2);
 }
 
 const isoTime = (ms: number) => new Date(ms).toISOString();

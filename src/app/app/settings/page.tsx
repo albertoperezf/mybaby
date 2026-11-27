@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Download, HardDriveDownload, Pencil, Plus, ShieldCheck, Trash2, Upload } from "lucide-react";
+import { Archive, Download, HardDriveDownload, Lock, Pencil, Plus, Share2, ShieldCheck, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/components/app-context";
@@ -12,6 +12,8 @@ import { db } from "@/db/schema";
 import { setSetting } from "@/db/settings";
 import type { Baby } from "@/db/types";
 import { BabySheet } from "@/features/babies/baby-form";
+import { DecryptBackupSheet, ExportBackupSheet } from "@/features/backup/backup-sheets";
+import { isEncryptedBackupText } from "@/features/backup/crypto";
 import { rebaseForBaby } from "@/features/vaccines/repo";
 import { useLocale, useT } from "@/i18n";
 import { readStorageStatus, requestPersistence, type StorageStatus } from "@/lib/pwa";
@@ -26,6 +28,8 @@ export default function SettingsPage() {
   const toast = useToast();
   const allBabies = useBabies(true);
   const [babySheet, setBabySheet] = useState<{ open: boolean; editing?: Baby }>({ open: false });
+  const [exportSheet, setExportSheet] = useState<"encrypt" | "share" | null>(null);
+  const [pendingEncrypted, setPendingEncrypted] = useState<string | null>(null);
   const [storage, setStorage] = useState<StorageStatus>({ persisted: null });
   const [importMode, setImportMode] = useState<"merge" | "replace">("merge");
   const [importMsg, setImportMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -55,15 +59,35 @@ export default function SettingsPage() {
     await saveFile(backupFilename("csv", `mybabylog-${kind}`), await buildCsv(kind), "text/csv");
   }
 
+  async function runJsonImport(text: string) {
+    try {
+      const { importBackupText } = await import("@/features/backup/import");
+      const r = await importBackupText(text, importMode, importMode === "replace");
+      setImportMsg({ ok: true, text: t("backup.result", { added: r.added, updated: r.updated, skipped: r.skipped, invalid: r.invalid }) });
+    } catch (e) {
+      const code = e instanceof Error ? e.message : "";
+      const key = code === "file-too-large" ? "backup.tooLarge" : code === "unknown-csv" ? "backup.unknownCsv" : "backup.badFile";
+      setImportMsg({ ok: false, text: t(key) });
+    }
+  }
+
   async function importFile(file: File) {
     setImportMsg(null);
     if (importMode === "replace" && !window.confirm(t("backup.confirmReplace"))) return;
     try {
-      const { importBackupText, importCsvText } = await import("@/features/backup/import");
       const text = await file.text();
       const isCsv = file.name.toLowerCase().endsWith(".csv");
-      const r = isCsv ? await importCsvText(text, baby.id) : await importBackupText(text, importMode, importMode === "replace");
-      setImportMsg({ ok: true, text: t("backup.result", { added: r.added, updated: r.updated, skipped: r.skipped, invalid: r.invalid }) });
+      if (isCsv) {
+        const { importCsvText } = await import("@/features/backup/import");
+        const r = await importCsvText(text, baby.id);
+        setImportMsg({ ok: true, text: t("backup.result", { added: r.added, updated: r.updated, skipped: r.skipped, invalid: r.invalid }) });
+        return;
+      }
+      if (isEncryptedBackupText(text)) {
+        setPendingEncrypted(text);
+        return;
+      }
+      await runJsonImport(text);
     } catch (e) {
       const code = e instanceof Error ? e.message : "";
       const key = code === "file-too-large" ? "backup.tooLarge" : code === "unknown-csv" ? "backup.unknownCsv" : "backup.badFile";
@@ -222,6 +246,16 @@ export default function SettingsPage() {
               <Download aria-hidden className="size-5" />
               {t("backup.exportJson")}
             </Button>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button onClick={() => setExportSheet("encrypt")}>
+                <Lock aria-hidden className="size-4" />
+                {t("backup.exportEncrypted")}
+              </Button>
+              <Button onClick={() => setExportSheet("share")}>
+                <Share2 aria-hidden className="size-4" />
+                {t("backup.shareCaregiver")}
+              </Button>
+            </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Button onClick={() => exportCsv("feedings")}>{t("backup.csvFeedings")}</Button>
               <Button onClick={() => exportCsv("diapers")}>{t("backup.csvDiapers")}</Button>
@@ -304,6 +338,20 @@ export default function SettingsPage() {
             if (input.birthDate !== babySheet.editing.birthDate) await rebaseForBaby({ ...babySheet.editing, birthDate: input.birthDate });
           } else await addBaby(input);
         }}
+      />
+
+      <ExportBackupSheet
+        open={exportSheet !== null}
+        mode={exportSheet ?? "encrypt"}
+        babies={(allBabies ?? []).filter((b) => !b.archivedAt)}
+        onClose={() => setExportSheet(null)}
+      />
+
+      <DecryptBackupSheet
+        open={pendingEncrypted !== null}
+        envelopeText={pendingEncrypted}
+        onClose={() => setPendingEncrypted(null)}
+        onDecrypted={runJsonImport}
       />
     </div>
   );

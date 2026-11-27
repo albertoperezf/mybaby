@@ -7,6 +7,8 @@ import { addBaby } from "@/db/repo";
 import { setSetting } from "@/db/settings";
 import type { SettingsValues } from "@/db/types";
 import { BabyForm } from "@/features/babies/baby-form";
+import { DecryptBackupSheet } from "@/features/backup/backup-sheets";
+import { isEncryptedBackupText } from "@/features/backup/crypto";
 import { useT } from "@/i18n";
 import { requestPersistence } from "@/lib/pwa";
 import { trackFeature } from "@/lib/telemetry";
@@ -16,6 +18,7 @@ export function Onboarding({ settings }: { settings: SettingsValues }) {
   const t = useT();
   const [accepted, setAccepted] = useState(settings.disclaimerAcceptedAt !== null);
   const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [pendingEncrypted, setPendingEncrypted] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function accept() {
@@ -23,12 +26,21 @@ export function Onboarding({ settings }: { settings: SettingsValues }) {
     void requestPersistence();
   }
 
+  async function finishRestore(text: string) {
+    const { importBackupText } = await import("@/features/backup/import");
+    await accept();
+    await importBackupText(text, "merge", true);
+  }
+
   async function restore(file: File) {
     setRestoreError(null);
     try {
-      const { importBackupText } = await import("@/features/backup/import");
-      await accept();
-      await importBackupText(await file.text(), "merge", true);
+      const text = await file.text();
+      if (isEncryptedBackupText(text)) {
+        setPendingEncrypted(text);
+        return;
+      }
+      await finishRestore(text);
     } catch {
       setRestoreError(t("backup.badFile"));
     }
@@ -121,6 +133,19 @@ export function Onboarding({ settings }: { settings: SettingsValues }) {
           </p>
         )}
       </div>
+
+      <DecryptBackupSheet
+        open={pendingEncrypted !== null}
+        envelopeText={pendingEncrypted}
+        onClose={() => setPendingEncrypted(null)}
+        onDecrypted={async (plaintext) => {
+          try {
+            await finishRestore(plaintext);
+          } catch {
+            setRestoreError(t("backup.badFile"));
+          }
+        }}
+      />
     </main>
   );
 }

@@ -144,6 +144,41 @@ test.describe("backup", () => {
     await page.locator('input[type="file"]').setInputFiles({ name: "bad.json", mimeType: "application/json", buffer: Buffer.from("nope") });
     await expect(page.getByText("That file isn't a valid backup.")).toBeVisible();
   });
+
+  test("encrypted backup rejects wrong passphrase and unlocks with the right one", async ({ page }) => {
+    await onboard(page);
+    await page.getByRole("button", { name: "Log 3 oz" }).click();
+    await page.getByRole("link", { name: "Settings" }).first().click();
+
+    await page.getByRole("button", { name: "Export encrypted backup" }).click();
+    const sheet = page.getByRole("dialog");
+    await sheet.getByLabel("Passphrase", { exact: true }).fill("my-secret-pass");
+    await sheet.getByLabel("Confirm passphrase", { exact: true }).fill("my-secret-pass");
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      sheet.getByRole("button", { name: "Export encrypted backup" }).click(),
+    ]);
+    const path = await download.path();
+    const { readFile } = await import("node:fs/promises");
+    const encText = await readFile(path, "utf8");
+    expect(encText).not.toContain("Ada");
+    expect(JSON.parse(encText).encrypted).toBe(true);
+
+    // Importing the encrypted file prompts for the passphrase.
+    const file = { name: "backup.enc.json", mimeType: "application/json", buffer: Buffer.from(encText) };
+    await page.locator('input[type="file"]').setInputFiles(file);
+    const unlockSheet = page.getByRole("dialog");
+    await expect(unlockSheet.getByRole("heading", { name: "Unlock encrypted backup" })).toBeVisible();
+
+    await unlockSheet.getByLabel("Passphrase", { exact: true }).fill("wrong-pass");
+    await unlockSheet.getByRole("button", { name: "Unlock and import" }).click();
+    await expect(unlockSheet.getByText("Wrong passphrase or corrupted file.")).toBeVisible();
+
+    await unlockSheet.getByLabel("Passphrase", { exact: true }).fill("my-secret-pass");
+    await unlockSheet.getByRole("button", { name: "Unlock and import" }).click();
+    await expect(page.getByText(/0 added, 0 updated, \d+ unchanged/)).toBeVisible();
+  });
 });
 
 test.describe("personality", () => {
